@@ -61,6 +61,46 @@ describe('reviewRules', () => {
     }
   });
 
+  it('rejects a whitespace-only target date for postponed or rescheduled tasks', () => {
+    for (const action of ['postpone', 'reschedule'] as const) {
+      expect(() =>
+        buildReviewDecision({
+          taskId: 'task-1',
+          action,
+          targetDate: '   ',
+          reasonTag: 'low_energy',
+          now: '2026-06-17T21:00:00.000Z',
+        }),
+      ).toThrow('Target date is required for postponed or rescheduled tasks');
+    }
+  });
+
+  it('omits a target date from drop decisions', () => {
+    const decision = buildReviewDecision({
+      id: 'decision-1',
+      taskId: 'task-1',
+      action: 'drop',
+      targetDate: '2026-06-20',
+      reasonTag: 'no_longer_needed',
+      now: '2026-06-17T21:00:00.000Z',
+    });
+
+    expect(decision.targetDate).toBeUndefined();
+  });
+
+  it('keeps a trimmed target date for rescheduled tasks', () => {
+    const decision = buildReviewDecision({
+      id: 'decision-1',
+      taskId: 'task-1',
+      action: 'reschedule',
+      targetDate: '  2026-06-20  ',
+      reasonTag: 'priority_changed',
+      now: '2026-06-17T21:00:00.000Z',
+    });
+
+    expect(decision.targetDate).toBe('2026-06-20');
+  });
+
   it('turns a blank reason note into undefined', () => {
     const decision = buildReviewDecision({
       id: 'decision-1',

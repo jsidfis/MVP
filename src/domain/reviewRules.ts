@@ -19,7 +19,10 @@ export function buildReviewDecision(input: {
   reasonNote?: string;
   now: string;
 }): ReviewDecision {
-  if ((input.action === 'postpone' || input.action === 'reschedule') && !input.targetDate) {
+  const targetDate = input.targetDate?.trim();
+  const requiresTargetDate = input.action === 'postpone' || input.action === 'reschedule';
+
+  if (requiresTargetDate && !targetDate) {
     throw new Error('Target date is required for postponed or rescheduled tasks');
   }
 
@@ -29,7 +32,7 @@ export function buildReviewDecision(input: {
     id: input.id ?? crypto.randomUUID(),
     taskId: input.taskId,
     action: input.action,
-    ...(input.targetDate ? { targetDate: input.targetDate } : {}),
+    ...(requiresTargetDate ? { targetDate } : {}),
     reasonTag: input.reasonTag,
     ...(reasonNote ? { reasonNote } : {}),
     createdAt: input.now,
