@@ -9,12 +9,12 @@ export const QUADRANT_FLOORS: Record<Quadrant, 1 | 2 | 3 | 4> = {
 
 const STATUS_ORDER: Record<TaskStatus, number> = {
   active_primary: 0,
-  active_background: 1,
-  paused: 2,
-  not_started: 3,
-  completed: 4,
-  postponed: 5,
-  dropped: 6,
+  active_background: 0,
+  paused: 0,
+  not_started: 1,
+  completed: 2,
+  postponed: 3,
+  dropped: 4,
 };
 
 export function buildTask(input: {

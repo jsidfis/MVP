@@ -62,13 +62,12 @@ describe('taskRules', () => {
   it('orders tasks by status group and createdAt without mutating the input', () => {
     const tasks: Task[] = [
       task('dropped', 'dropped', '2026-06-15', '2026-06-16T07:00:00.000Z', '2026-06-16T07:00:00.000Z'),
-      task('paused', 'paused', '2026-06-15', '2026-06-16T07:00:00.000Z', '2026-06-16T07:00:00.000Z'),
-      task('background', 'active_background', '2026-06-15', '2026-06-16T07:00:00.000Z', '2026-06-16T07:00:00.000Z'),
+      task('paused', 'paused', '2026-06-15', '2026-06-16T05:00:00.000Z', '2026-06-16T05:00:00.000Z'),
+      task('background', 'active_background', '2026-06-15', '2026-06-16T06:00:00.000Z', '2026-06-16T06:00:00.000Z'),
       task('primary-late', 'active_primary', '2026-06-15', '2026-06-16T09:00:00.000Z', '2026-06-16T09:00:00.000Z'),
       task('completed', 'completed', '2026-06-15', '2026-06-16T07:00:00.000Z', '2026-06-16T07:00:00.000Z'),
       task('postponed', 'postponed', '2026-06-15', '2026-06-16T07:00:00.000Z', '2026-06-16T07:00:00.000Z'),
       task('not-started', 'not_started', '2026-06-15', '2026-06-16T07:00:00.000Z', '2026-06-16T07:00:00.000Z'),
-      task('primary-early', 'active_primary', '2026-06-15', '2026-06-16T06:00:00.000Z', '2026-06-16T06:00:00.000Z'),
     ];
     const originalOrder = tasks.map((item) => item.id);
 
@@ -77,10 +76,9 @@ describe('taskRules', () => {
     expect(ordered).not.toBe(tasks);
     expect(tasks.map((item) => item.id)).toEqual(originalOrder);
     expect(ordered.map((item) => item.id)).toEqual([
-      'primary-early',
-      'primary-late',
-      'background',
       'paused',
+      'background',
+      'primary-late',
       'not-started',
       'completed',
       'postponed',
