@@ -1,8 +1,20 @@
+import { MemoryDailyRepository } from './data/memoryDailyRepository';
+import { AppStoreProvider } from './store/appStore';
+import { DailyWorkspace } from './views/DailyWorkspace';
+
+const repository = new MemoryDailyRepository();
+
 export function App() {
   return (
-    <main className="app-shell">
-      <h1>每日计划与复盘</h1>
-      <p>今天工作台将在后续任务中接入。</p>
-    </main>
+    <AppStoreProvider repository={repository} today={getTodayDate()}>
+      <DailyWorkspace />
+    </AppStoreProvider>
   );
+}
+
+function getTodayDate(): string {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+
+  return localDate.toISOString().slice(0, 10);
 }

@@ -2,6 +2,8 @@
   color: #352a20;
   background: #f3eadc;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 * {
@@ -10,8 +12,10 @@
 
 body {
   margin: 0;
-  min-width: 960px;
   min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(25, 31, 54, 0.08), transparent 36%),
+    #f3eadc;
 }
 
 button,
@@ -21,7 +25,264 @@ select {
   font: inherit;
 }
 
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #d8c7ae;
+  border-radius: 8px;
+  background: #fffaf2;
+  color: #2f261f;
+  padding: 9px 12px;
+}
+
+input:focus,
+select:focus,
+button:focus-visible {
+  outline: 3px solid rgba(170, 122, 73, 0.32);
+  outline-offset: 2px;
+}
+
 .app-shell {
   min-height: 100vh;
   padding: 32px;
+}
+
+.workspace-shell {
+  color: #2f261f;
+}
+
+.loading-state {
+  margin: 0;
+  color: #6f614d;
+}
+
+.workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto 24px;
+}
+
+.workspace-header h1 {
+  margin: 4px 0 0;
+  color: #18203a;
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.workspace-date {
+  margin: 0;
+  color: #7b6a55;
+  font-size: 14px;
+}
+
+.workspace-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto 18px;
+}
+
+.segmented-control {
+  display: inline-flex;
+  gap: 4px;
+  min-height: 40px;
+  border: 1px solid rgba(31, 42, 72, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 250, 242, 0.72);
+  padding: 4px;
+}
+
+.segmented-control__button {
+  min-width: 92px;
+  border-radius: 6px;
+  background: transparent;
+  color: #514635;
+  padding: 7px 12px;
+}
+
+.segmented-control__button[aria-pressed="true"] {
+  background: #1d2643;
+  color: #fff8ed;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 18px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.workspace-main,
+.workspace-side {
+  min-width: 0;
+}
+
+.workspace-side {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.workspace-panel {
+  border: 1px solid rgba(84, 69, 48, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 250, 242, 0.82);
+  box-shadow: 0 16px 42px rgba(32, 29, 24, 0.08);
+  padding: 18px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-heading h2,
+.task-view h2 {
+  margin: 0;
+  color: #1d2643;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.quick-add {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: #5d4f3e;
+  font-size: 14px;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 40px;
+  border-radius: 8px;
+  padding: 9px 14px;
+  white-space: nowrap;
+}
+
+.primary-button {
+  background: #a9643a;
+  color: #fff8ed;
+}
+
+.secondary-button {
+  border: 1px solid rgba(29, 38, 67, 0.18);
+  background: #fff8ed;
+  color: #1d2643;
+}
+
+.task-view {
+  min-height: 360px;
+}
+
+.task-list,
+.galaxy-task-list,
+.carryover-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-row,
+.galaxy-task,
+.carryover-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  border: 1px solid rgba(29, 38, 67, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.52);
+  padding: 10px 12px;
+}
+
+.carryover-item {
+  align-items: flex-start;
+}
+
+.carryover-item strong {
+  display: block;
+  color: #2f261f;
+}
+
+.carryover-item p,
+.empty-state {
+  margin: 4px 0 0;
+  color: #7b6a55;
+  font-size: 14px;
+}
+
+.status-badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(29, 38, 67, 0.09);
+  color: #1d2643;
+  padding: 4px 9px;
+  font-size: 12px;
+}
+
+.galaxy-task {
+  background:
+    linear-gradient(135deg, rgba(29, 38, 67, 0.9), rgba(43, 54, 87, 0.86)),
+    #1d2643;
+  color: #fff8ed;
+}
+
+.galaxy-task .status-badge {
+  background: rgba(255, 248, 237, 0.14);
+  color: #fff8ed;
+}
+
+@media (max-width: 820px) {
+  .app-shell {
+    padding: 20px;
+  }
+
+  .workspace-header,
+  .workspace-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .segmented-control {
+    width: 100%;
+  }
+
+  .segmented-control__button {
+    flex: 1;
+    min-width: 0;
+  }
 }
