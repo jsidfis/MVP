@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryDailyRepository } from '../data/memoryDailyRepository';
 import type { DailyRepository } from '../data/dailyRepository';
-import type { Task } from '../domain/types';
+import type { DailyFile, Task, TaskSession, UserSettings } from '../domain/types';
 import { AppStoreProvider, useAppStore } from './appStore';
 
 const today = '2026-06-18';
@@ -55,6 +55,22 @@ describe('AppStoreProvider', () => {
     });
   });
 
+  it('keeps a task added before initial load resolves', async () => {
+    vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2026-06-18T09:30:00.000Z');
+    const repository = new DelayedLoadRepository({
+      settings: { homeView: 'folder', notificationsEnabled: false },
+    });
+    renderStore(repository);
+
+    await userEvent.click(screen.getByRole('button', { name: 'add' }));
+    await waitFor(() => expectText('tasks', 'Write store test'));
+
+    repository.resolveInitialLoad();
+
+    await waitFor(() => expectText('loading', 'loaded'));
+    expectText('tasks', 'Write store test');
+  });
+
   it('confirms carryover into today and removes it from candidates', async () => {
     vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2026-06-18T10:15:00.000Z');
     const repository = new MemoryDailyRepository();
@@ -76,6 +92,32 @@ describe('AppStoreProvider', () => {
       isCarryover: true,
       carryoverFromDate: '2026-06-17',
       updatedAt: '2026-06-18T10:15:00.000Z',
+    });
+  });
+
+  it('preserves existing settings fields when home view changes before initial load resolves', async () => {
+    const repository = new DelayedLoadRepository({
+      settings: {
+        homeView: 'folder',
+        notificationsEnabled: true,
+        morningReminder: '08:30',
+        eveningReminder: '21:30',
+      },
+    });
+    renderStore(repository);
+
+    await userEvent.click(screen.getByRole('button', { name: 'set galaxy' }));
+    await waitFor(() => expectText('home-view', 'galaxy'));
+
+    repository.resolveInitialLoad();
+
+    await waitFor(() => expectText('loading', 'loaded'));
+    expectText('home-view', 'galaxy');
+    await expect(repository.getSettings()).resolves.toEqual({
+      homeView: 'galaxy',
+      notificationsEnabled: true,
+      morningReminder: '08:30',
+      eveningReminder: '21:30',
     });
   });
 
@@ -142,7 +184,7 @@ function titles(tasks: Task[]): string {
 }
 
 function expectText(testId: string, text: string) {
-  expect(screen.getByTestId(testId).textContent).toContain(text);
+  expect(screen.getByTestId(testId).textContent).toBe(text);
 }
 
 function task(id: string, date: string, status: Task['status'], title: string): Task {
@@ -157,4 +199,90 @@ function task(id: string, date: string, status: Task['status'], title: string): 
     createdAt: `${date}T08:00:00.000Z`,
     updatedAt: `${date}T08:00:00.000Z`,
   };
+}
+
+class DelayedLoadRepository implements DailyRepository {
+  private readonly initialLoad = deferred<void>();
+  private readonly dailyFile: DailyFile;
+  private readonly tasks = new Map<string, Task>();
+  private readonly settingsAtLoadStart: UserSettings;
+  private settings: UserSettings;
+  private settingsReads = 0;
+
+  constructor(input: { settings: UserSettings; tasks?: Task[] }) {
+    this.dailyFile = { date: today, stage: 'plan', goal: '' };
+    this.settings = { ...input.settings };
+    this.settingsAtLoadStart = { ...input.settings };
+
+    for (const item of input.tasks ?? []) {
+      this.tasks.set(item.id, { ...item });
+    }
+  }
+
+  resolveInitialLoad() {
+    this.initialLoad.resolve();
+  }
+
+  async getDailyFile(date: string): Promise<DailyFile> {
+    await this.initialLoad.promise;
+    return { ...this.dailyFile, date };
+  }
+
+  async saveDailyFile(file: DailyFile): Promise<void> {
+    Object.assign(this.dailyFile, file);
+  }
+
+  async listTasks(date: string): Promise<Task[]> {
+    const snapshot = Array.from(this.tasks.values())
+      .filter((item) => item.date === date)
+      .map((item) => ({ ...item }));
+
+    await this.initialLoad.promise;
+    return snapshot;
+  }
+
+  async saveTask(item: Task): Promise<void> {
+    this.tasks.set(item.id, { ...item });
+  }
+
+  async listSessions(): Promise<TaskSession[]> {
+    return [];
+  }
+
+  async saveSession(): Promise<void> {}
+
+  async saveReviewDecision(): Promise<void> {}
+
+  async listCarryoverCandidates(date: string): Promise<Task[]> {
+    const snapshot = Array.from(this.tasks.values())
+      .filter((item) => item.status === 'postponed' && item.date < date)
+      .map((item) => ({ ...item }));
+
+    await this.initialLoad.promise;
+    return snapshot;
+  }
+
+  async getSettings(): Promise<UserSettings> {
+    this.settingsReads += 1;
+
+    if (this.settingsReads === 1) {
+      await this.initialLoad.promise;
+      return { ...this.settingsAtLoadStart };
+    }
+
+    return { ...this.settings };
+  }
+
+  async saveSettings(settings: UserSettings): Promise<void> {
+    this.settings = { ...settings };
+  }
+}
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+
+  return { promise, resolve };
 }

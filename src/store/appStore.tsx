@@ -11,11 +11,6 @@ import type { DailyRepository } from '../data/dailyRepository';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
 import type { DailyFile, Quadrant, Task, UserSettings } from '../domain/types';
 
-const DEFAULT_SETTINGS: UserSettings = {
-  homeView: 'folder',
-  notificationsEnabled: false,
-};
-
 export interface AppState {
   today: string;
   dailyFile?: DailyFile;
@@ -108,7 +103,8 @@ export function AppStoreProvider({
 
   const setHomeView = useCallback(
     async (view: UserSettings['homeView']) => {
-      const settings = { ...(state.settings ?? DEFAULT_SETTINGS), homeView: view };
+      const currentSettings = state.settings ?? (await repository.getSettings());
+      const settings = { ...currentSettings, homeView: view };
 
       await repository.saveSettings(settings);
       dispatch({ type: 'settingsUpdated', settings });
@@ -152,15 +148,20 @@ function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'loading':
       return { ...state, today: action.today, isLoading: true };
-    case 'loaded':
+    case 'loaded': {
+      const tasks = mergeLoadedTasks(action.tasks, state.tasks);
+
       return {
         ...state,
         dailyFile: action.dailyFile,
-        settings: action.settings,
-        tasks: action.tasks,
-        carryoverCandidates: action.carryoverCandidates,
+        settings: state.settings ?? action.settings,
+        tasks,
+        carryoverCandidates: action.carryoverCandidates.filter(
+          (candidate) => !tasks.some((task) => task.id === candidate.id),
+        ),
         isLoading: false,
       };
+    }
     case 'upsertTask':
       return { ...state, tasks: upsertTask(state.tasks, action.task) };
     case 'confirmedCarryover':
@@ -176,4 +177,10 @@ function reducer(state: AppState, action: Action): AppState {
 
 function upsertTask(tasks: Task[], task: Task): Task[] {
   return [...tasks.filter((item) => item.id !== task.id), task];
+}
+
+function mergeLoadedTasks(loadedTasks: Task[], currentTasks: Task[]): Task[] {
+  const currentTaskIds = new Set(currentTasks.map((task) => task.id));
+
+  return [...loadedTasks.filter((task) => !currentTaskIds.has(task.id)), ...currentTasks];
 }
