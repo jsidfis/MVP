@@ -165,7 +165,6 @@ function createRepository(db: SqlDatabase): DailyRepository {
           carryover_from_date = excluded.carryover_from_date,
           postpone_reason_tag = excluded.postpone_reason_tag,
           postpone_reason_note = excluded.postpone_reason_note,
-          created_at = excluded.created_at,
           updated_at = excluded.updated_at`,
         [
           task.id,
@@ -228,7 +227,13 @@ function createRepository(db: SqlDatabase): DailyRepository {
           reason_tag,
           reason_note,
           created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT(id) DO UPDATE SET
+          task_id = excluded.task_id,
+          action = excluded.action,
+          target_date = excluded.target_date,
+          reason_tag = excluded.reason_tag,
+          reason_note = excluded.reason_note`,
         [
           decision.id,
           decision.taskId,
