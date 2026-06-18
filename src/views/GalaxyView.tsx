@@ -1,22 +1,50 @@
-import { TaskStatusBadge } from '../components/TaskStatusBadge';
+import { buildGalaxyLayout } from '../domain/galaxyLayout';
 import type { Task } from '../domain/types';
 
 export function GalaxyView({ tasks }: { tasks: Task[] }) {
+  const layout = buildGalaxyLayout(tasks);
+  const activePlanet = layout.planets.find((planet) => planet.task.status === 'active_primary');
+
   return (
     <section className="workspace-panel task-view" aria-labelledby="galaxy-view-title">
       <h2 id="galaxy-view-title">今日星图</h2>
-      {tasks.length === 0 ? (
-        <p className="empty-state">暂无任务</p>
-      ) : (
-        <ul className="galaxy-task-list">
-          {tasks.map((task) => (
-            <li key={task.id} className="galaxy-task">
-              <span>{task.title}</span>
-              <TaskStatusBadge status={task.status} isCarryover={task.isCarryover} />
-            </li>
+      <div className="galaxy-map" aria-label="四象限星图">
+        <div className="galaxy-axis galaxy-axis--vertical" aria-hidden="true" />
+        <div className="galaxy-axis galaxy-axis--horizontal" aria-hidden="true" />
+        <span className="galaxy-center" aria-hidden="true" />
+        <svg className="galaxy-routes" viewBox="0 0 100 100">
+          {layout.routes.map((route) => (
+            <path
+              key={route.task.id}
+              aria-label="飞行轨迹"
+              className={route.completed ? 'galaxy-route galaxy-route--completed' : 'galaxy-route'}
+              d={route.path}
+              fill="none"
+            />
           ))}
-        </ul>
-      )}
+        </svg>
+        {layout.planets.map((planet) => (
+          <article
+            key={planet.task.id}
+            className={`galaxy-planet galaxy-planet--${planet.task.status}`}
+            style={{ left: `${planet.position.x}%`, top: `${planet.position.y}%` }}
+          >
+            {planet.task.status === 'completed' ? (
+              <span className="galaxy-flag" aria-label="完成旗帜" />
+            ) : null}
+            <span className="galaxy-planet__orb" aria-hidden="true" />
+            <span className="galaxy-planet__title">{planet.task.title}</span>
+          </article>
+        ))}
+        {activePlanet ? (
+          <span
+            className="galaxy-ship"
+            aria-label="当前飞船"
+            style={{ left: `${activePlanet.position.x}%`, top: `${activePlanet.position.y}%` }}
+          />
+        ) : null}
+        {tasks.length === 0 ? <p className="empty-state">暂无任务</p> : null}
+      </div>
     </section>
   );
 }
