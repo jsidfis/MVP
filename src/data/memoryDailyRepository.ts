@@ -21,44 +21,74 @@ export class MemoryDailyRepository implements DailyRepository {
       this.dailyFiles.set(date, file);
     }
 
-    return file;
+    return cloneDailyFile(file);
   }
 
   async saveDailyFile(file: DailyFile): Promise<void> {
-    this.dailyFiles.set(file.date, file);
+    this.dailyFiles.set(file.date, cloneDailyFile(file));
   }
 
   async listTasks(date: string): Promise<Task[]> {
-    return Array.from(this.tasks.values()).filter((task) => task.date === date);
+    return Array.from(this.tasks.values())
+      .filter((task) => task.date === date)
+      .map(cloneTask);
   }
 
   async saveTask(task: Task): Promise<void> {
-    this.tasks.set(task.id, task);
+    this.tasks.set(task.id, cloneTask(task));
   }
 
   async listSessions(taskId: string): Promise<TaskSession[]> {
-    return Array.from(this.sessions.values()).filter((session) => session.taskId === taskId);
+    return Array.from(this.sessions.values())
+      .filter((session) => session.taskId === taskId)
+      .map(cloneSession);
   }
 
   async saveSession(session: TaskSession): Promise<void> {
-    this.sessions.set(session.id, session);
+    this.sessions.set(session.id, cloneSession(session));
   }
 
   async saveReviewDecision(decision: ReviewDecision): Promise<void> {
-    this.reviewDecisions.set(decision.id, decision);
+    this.reviewDecisions.set(decision.id, cloneReviewDecision(decision));
   }
 
   async listCarryoverCandidates(today: string): Promise<Task[]> {
-    return Array.from(this.tasks.values()).filter(
-      (task) => task.status === 'postponed' && task.date < today,
-    );
+    return Array.from(this.tasks.values())
+      .filter((task) => task.status === 'postponed' && task.date < today)
+      .map(cloneTask);
   }
 
   async getSettings(): Promise<UserSettings> {
-    return this.settings ?? { ...DEFAULT_SETTINGS };
+    return cloneSettings(this.settings ?? DEFAULT_SETTINGS);
   }
 
   async saveSettings(settings: UserSettings): Promise<void> {
-    this.settings = settings;
+    this.settings = cloneSettings(settings);
   }
+}
+
+function cloneDailyFile(file: DailyFile): DailyFile {
+  const clone = { ...file };
+
+  if (file.review) {
+    clone.review = { ...file.review };
+  }
+
+  return clone;
+}
+
+function cloneTask(task: Task): Task {
+  return { ...task };
+}
+
+function cloneSession(session: TaskSession): TaskSession {
+  return { ...session };
+}
+
+function cloneReviewDecision(decision: ReviewDecision): ReviewDecision {
+  return { ...decision };
+}
+
+function cloneSettings(settings: UserSettings): UserSettings {
+  return { ...settings };
 }

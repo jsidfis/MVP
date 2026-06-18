@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryDailyRepository } from './memoryDailyRepository';
-import type { Task, TaskSession, UserSettings } from '../domain/types';
+import type { DailyFile, Task, TaskSession, UserSettings } from '../domain/types';
 
 describe('MemoryDailyRepository', () => {
   it('creates a default daily file on first read', async () => {
@@ -116,7 +116,141 @@ describe('MemoryDailyRepository', () => {
 
     await expect(repository.getSettings()).resolves.toEqual(settings);
   });
+
+  it('isolates saved daily file objects from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const file = dailyFile('2026-06-17');
+
+    await repository.saveDailyFile(file);
+    file.goal = 'Mutated outside repository';
+    file.review!.completedText = 'Mutated review';
+
+    await expect(repository.getDailyFile('2026-06-17')).resolves.toEqual(dailyFile('2026-06-17'));
+  });
+
+  it('isolates returned daily file objects from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const file = dailyFile('2026-06-17');
+
+    await repository.saveDailyFile(file);
+    const returned = await repository.getDailyFile('2026-06-17');
+    returned.goal = 'Mutated outside repository';
+    returned.review!.completedText = 'Mutated review';
+
+    await expect(repository.getDailyFile('2026-06-17')).resolves.toEqual(dailyFile('2026-06-17'));
+  });
+
+  it('isolates saved task objects from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const saved = task('task-1', '2026-06-17', 'not_started');
+
+    await repository.saveTask(saved);
+    saved.title = 'Mutated outside repository';
+    saved.status = 'completed';
+
+    await expect(repository.listTasks('2026-06-17')).resolves.toEqual([
+      task('task-1', '2026-06-17', 'not_started'),
+    ]);
+  });
+
+  it('isolates returned task objects from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const saved = task('task-1', '2026-06-17', 'not_started');
+
+    await repository.saveTask(saved);
+    const [returned] = await repository.listTasks('2026-06-17');
+    returned.title = 'Mutated outside repository';
+    returned.status = 'completed';
+
+    await expect(repository.listTasks('2026-06-17')).resolves.toEqual([
+      task('task-1', '2026-06-17', 'not_started'),
+    ]);
+  });
+
+  it('isolates saved session objects from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const saved = session('session-1', 'task-1');
+
+    await repository.saveSession(saved);
+    saved.endedAt = '2026-06-17T09:30:00.000Z';
+    saved.durationMinutes = 30;
+
+    await expect(repository.listSessions('task-1')).resolves.toEqual([
+      session('session-1', 'task-1'),
+    ]);
+  });
+
+  it('isolates returned session objects from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const saved = session('session-1', 'task-1');
+
+    await repository.saveSession(saved);
+    const [returned] = await repository.listSessions('task-1');
+    returned.endedAt = '2026-06-17T09:30:00.000Z';
+    returned.durationMinutes = 30;
+
+    await expect(repository.listSessions('task-1')).resolves.toEqual([
+      session('session-1', 'task-1'),
+    ]);
+  });
+
+  it('isolates returned carryover candidates from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const saved = task('task-1', '2026-06-16', 'postponed');
+
+    await repository.saveTask(saved);
+    const [returned] = await repository.listCarryoverCandidates('2026-06-17');
+    returned.title = 'Mutated outside repository';
+    returned.status = 'completed';
+
+    await expect(repository.listCarryoverCandidates('2026-06-17')).resolves.toEqual([
+      task('task-1', '2026-06-16', 'postponed'),
+    ]);
+  });
+
+  it('isolates saved and returned settings objects from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const settings: UserSettings = {
+      homeView: 'galaxy',
+      notificationsEnabled: true,
+      morningReminder: '08:30',
+    };
+
+    await repository.saveSettings(settings);
+    settings.homeView = 'folder';
+    settings.notificationsEnabled = false;
+
+    await expect(repository.getSettings()).resolves.toEqual({
+      homeView: 'galaxy',
+      notificationsEnabled: true,
+      morningReminder: '08:30',
+    });
+
+    const returned = await repository.getSettings();
+    returned.homeView = 'folder';
+    returned.notificationsEnabled = false;
+
+    await expect(repository.getSettings()).resolves.toEqual({
+      homeView: 'galaxy',
+      notificationsEnabled: true,
+      morningReminder: '08:30',
+    });
+  });
 });
+
+function dailyFile(date: string): DailyFile {
+  return {
+    date,
+    stage: 'review',
+    goal: 'Review repository behavior',
+    review: {
+      completedText: 'Finished tests',
+      unfinishedText: 'No blockers',
+      feelingText: 'Focused',
+      tomorrowFocusText: 'Continue implementation',
+    },
+  };
+}
 
 function task(id: string, date: string, status: Task['status']): Task {
   return {
