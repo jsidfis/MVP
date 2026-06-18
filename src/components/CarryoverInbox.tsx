@@ -13,9 +13,11 @@ const reasonLabels: Record<ReasonTag, string> = {
 export function CarryoverInbox({
   candidates,
   onConfirm,
+  onHide,
 }: {
   candidates: Task[];
   onConfirm: (taskId: string) => Promise<void>;
+  onHide: (taskId: string) => void;
 }) {
   if (candidates.length === 0) {
     return null;
@@ -33,9 +35,14 @@ export function CarryoverInbox({
               <strong>{task.title}</strong>
               <p>{carryoverSummary(task)}</p>
             </div>
-            <button type="button" className="secondary-button" onClick={() => void onConfirm(task.id)}>
-              加入今天
-            </button>
+            <div className="carryover-actions">
+              <button type="button" className="secondary-button" onClick={() => onHide(task.id)}>
+                忽略
+              </button>
+              <button type="button" className="secondary-button" onClick={() => void onConfirm(task.id)}>
+                加入今天
+              </button>
+            </div>
           </li>
         ))}
       </ul>

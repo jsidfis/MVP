@@ -18,6 +18,7 @@ export function DailyWorkspace() {
     isLoading,
     addTask,
     confirmCarryover,
+    hideCarryoverCandidate,
     setHomeView,
   } = useAppStore();
   const [stage, setStage] = useState<Stage>('plan');
@@ -57,7 +58,11 @@ export function DailyWorkspace() {
       <div className="workspace-grid">
         <div className="workspace-main">{currentView === 'galaxy' ? <GalaxyView tasks={tasks} /> : <FolderView tasks={tasks} />}</div>
         <aside className="workspace-side" aria-label="任务创建">
-          <CarryoverInbox candidates={carryoverCandidates} onConfirm={confirmCarryover} />
+          <CarryoverInbox
+            candidates={carryoverCandidates}
+            onConfirm={confirmCarryover}
+            onHide={hideCarryoverCandidate}
+          />
           <section className="workspace-panel" aria-label="快速添加任务">
             <TaskQuickAdd onAdd={addTask} />
           </section>

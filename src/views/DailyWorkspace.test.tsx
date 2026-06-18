@@ -64,6 +64,23 @@ describe('DailyWorkspace', () => {
       carryoverFromDate: '2026-06-17',
     });
   });
+
+  it('hides a carryover candidate without adding it to today', async () => {
+    const repository = new MemoryDailyRepository();
+    await repository.saveTask(task('task-yesterday', '2026-06-17', '昨天的任务'));
+    renderWorkspace(repository);
+
+    const inbox = await screen.findByRole('region', { name: '待确认顺延任务' });
+    expect(within(inbox).getByText('昨天的任务')).toBeTruthy();
+
+    await userEvent.click(within(inbox).getByRole('button', { name: '忽略' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: '待确认顺延任务' })).toBeNull();
+    });
+    expect(screen.queryByText('昨天的任务')).toBeNull();
+    await expect(repository.listTasks(today)).resolves.toEqual([]);
+  });
 });
 
 function renderWorkspace(repository: MemoryDailyRepository) {

@@ -23,6 +23,7 @@ export interface AppState {
 interface AppActions {
   addTask(input: { title: string; quadrant: Quadrant }): Promise<void>;
   confirmCarryover(taskId: string): Promise<void>;
+  hideCarryoverCandidate(taskId: string): void;
   setHomeView(view: UserSettings['homeView']): Promise<void>;
 }
 
@@ -39,6 +40,7 @@ type Action =
     }
   | { type: 'upsertTask'; task: Task }
   | { type: 'confirmedCarryover'; task: Task; candidateId: string }
+  | { type: 'hiddenCarryoverCandidate'; taskId: string }
   | { type: 'settingsUpdated'; settings: UserSettings };
 
 const AppStoreContext = createContext<AppStoreValue | null>(null);
@@ -112,14 +114,19 @@ export function AppStoreProvider({
     [repository, state.settings],
   );
 
+  const hideCarryoverCandidate = useCallback((taskId: string) => {
+    dispatch({ type: 'hiddenCarryoverCandidate', taskId });
+  }, []);
+
   const value = useMemo(
     () => ({
       ...state,
       addTask,
       confirmCarryover,
+      hideCarryoverCandidate,
       setHomeView,
     }),
-    [addTask, confirmCarryover, setHomeView, state],
+    [addTask, confirmCarryover, hideCarryoverCandidate, setHomeView, state],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
@@ -169,6 +176,11 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         tasks: upsertTask(state.tasks, action.task),
         carryoverCandidates: state.carryoverCandidates.filter((task) => task.id !== action.candidateId),
+      };
+    case 'hiddenCarryoverCandidate':
+      return {
+        ...state,
+        carryoverCandidates: state.carryoverCandidates.filter((task) => task.id !== action.taskId),
       };
     case 'settingsUpdated':
       return { ...state, settings: action.settings };
