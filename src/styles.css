@@ -201,6 +201,66 @@ button:focus-visible {
   min-height: 360px;
 }
 
+.folder-cabinet {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.folder-floor {
+  border: 1px solid rgba(29, 38, 67, 0.12);
+  border-left-width: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.45);
+  padding: 12px;
+}
+
+.folder-floor--4 {
+  border-left-color: #b84a3f;
+}
+
+.folder-floor--3 {
+  border-left-color: #b57a32;
+}
+
+.folder-floor--2 {
+  border-left-color: #3d7d8a;
+}
+
+.folder-floor--1 {
+  border-left-color: #68736f;
+}
+
+.folder-floor__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.folder-floor__header h3 {
+  margin: 0;
+  color: #1d2643;
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.folder-floor__number {
+  flex: 0 0 auto;
+  min-width: 40px;
+  border-radius: 6px;
+  background: rgba(29, 38, 67, 0.1);
+  color: #1d2643;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.folder-floor__tasks {
+  margin-top: 10px;
+}
+
 .task-list,
 .galaxy-task-list,
 .carryover-list {
