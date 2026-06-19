@@ -1,11 +1,13 @@
 import { buildGalaxyLayout } from '../domain/galaxyLayout';
-import type { Task } from '../domain/types';
+import type { Task, TaskStatus } from '../domain/types';
 
 type GalaxyViewProps = {
   tasks: Task[];
   onStartTask?: (taskId: string) => void;
   onCompleteTask?: (taskId: string) => void;
 };
+
+type StartableTaskStatus = 'not_started' | 'paused' | 'active_background';
 
 export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewProps) {
   const layout = buildGalaxyLayout(tasks);
@@ -29,28 +31,16 @@ export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewPro
             />
           ))}
         </svg>
-        {layout.planets.map((planet) => {
-          const isActive = planet.task.status === 'active_primary';
-          const handler = isActive ? onCompleteTask : onStartTask;
-
-          return (
-            <button
-              key={planet.task.id}
-              type="button"
-              className={`galaxy-planet galaxy-planet--${planet.task.status}`}
-              style={{ left: `${planet.position.x}%`, top: `${planet.position.y}%` }}
-              disabled={!handler}
-              onClick={() => handler?.(planet.task.id)}
-              aria-label={`${planet.task.title} ${isActive ? '完成' : '开始'}`}
-            >
-            {planet.task.status === 'completed' ? (
-              <span className="galaxy-flag" aria-label="完成旗帜" />
-            ) : null}
-            <span className="galaxy-planet__orb" aria-hidden="true" />
-            <span className="galaxy-planet__title">{planet.task.title}</span>
-            </button>
-          );
-        })}
+        {layout.planets.map((planet) => (
+          <PlanetAction
+            key={planet.task.id}
+            task={planet.task}
+            left={planet.position.x}
+            top={planet.position.y}
+            onStartTask={onStartTask}
+            onCompleteTask={onCompleteTask}
+          />
+        ))}
         {activePlanet ? (
           <span
             className="galaxy-ship"
@@ -62,4 +52,55 @@ export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewPro
       </div>
     </section>
   );
+}
+
+function PlanetAction({
+  task,
+  left,
+  top,
+  onStartTask,
+  onCompleteTask,
+}: {
+  task: Task;
+  left: number;
+  top: number;
+  onStartTask?: (taskId: string) => void;
+  onCompleteTask?: (taskId: string) => void;
+}) {
+  const isActive = task.status === 'active_primary';
+  const canStart = isStartableStatus(task.status);
+  const handler = isActive ? onCompleteTask : canStart ? onStartTask : undefined;
+  const className = `galaxy-planet galaxy-planet--${task.status}`;
+  const style = { left: `${left}%`, top: `${top}%` };
+  const content = (
+    <>
+      {task.status === 'completed' ? <span className="galaxy-flag" aria-label="完成旗帜" /> : null}
+      <span className="galaxy-planet__orb" aria-hidden="true" />
+      <span className="galaxy-planet__title">{task.title}</span>
+    </>
+  );
+
+  if (!handler) {
+    return (
+      <article className={className} style={style}>
+        {content}
+      </article>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={className}
+      style={style}
+      onClick={() => handler(task.id)}
+      aria-label={`${task.title} ${isActive ? '完成' : '开始'}`}
+    >
+      {content}
+    </button>
+  );
+}
+
+function isStartableStatus(status: TaskStatus): status is StartableTaskStatus {
+  return status === 'not_started' || status === 'paused' || status === 'active_background';
 }

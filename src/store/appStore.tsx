@@ -5,12 +5,13 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   type ReactNode,
 } from 'react';
 import type { DailyRepository } from '../data/dailyRepository';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
-import { completeSession, createSession, switchPrimaryTask } from '../domain/timeRules';
-import type { DailyFile, Quadrant, Task, UserSettings } from '../domain/types';
+import { completeSession, createSession } from '../domain/timeRules';
+import type { DailyFile, Quadrant, Task, TaskSession, UserSettings } from '../domain/types';
 
 export interface AppState {
   today: string;
@@ -32,6 +33,7 @@ interface AppActions {
 
 type AppStoreValue = AppState & AppActions;
 type OldTaskMode = 'pause' | 'background';
+type StartableTaskStatus = 'not_started' | 'paused' | 'active_background';
 
 type Action =
   | { type: 'loading'; today: string }
@@ -59,6 +61,7 @@ export function AppStoreProvider({
   children: ReactNode;
 }) {
   const [state, dispatch] = useReducer(reducer, initialState(today));
+  const startingTaskIds = useRef(new Set<string>());
 
   useEffect(() => {
     let cancelled = false;
@@ -96,27 +99,56 @@ export function AppStoreProvider({
     async (taskId: string, oldTaskMode: OldTaskMode = 'pause') => {
       const targetTask = state.tasks.find((task) => task.id === taskId);
 
-      if (!targetTask || targetTask.status === 'active_primary') {
+      if (!targetTask || targetTask.status === 'active_primary' || !isStartableStatus(targetTask.status)) {
         return;
       }
 
-      const activeTask = state.tasks.find((task) => task.status === 'active_primary');
-      const now = new Date().toISOString();
-
-      if (activeTask) {
-        const switched = switchPrimaryTask({ oldTask: activeTask, newTask: targetTask, oldTaskMode });
-        await repository.saveTask(switched.oldTask);
-        await repository.saveTask(switched.newTask);
-        await repository.saveSession(createSession(taskId, now));
-        dispatch({ type: 'upsertTask', task: switched.oldTask });
-        dispatch({ type: 'upsertTask', task: switched.newTask });
+      if (startingTaskIds.current.has(taskId)) {
         return;
       }
 
-      const task = { ...targetTask, status: 'active_primary' as const, updatedAt: now };
-      await repository.saveTask(task);
-      await repository.saveSession(createSession(taskId, now));
-      dispatch({ type: 'upsertTask', task });
+      startingTaskIds.current.add(taskId);
+
+      try {
+        const activeTask = state.tasks.find((task) => task.status === 'active_primary');
+        const now = new Date().toISOString();
+        const openSession = latestOpenSession(await repository.listSessions(taskId));
+
+        if (activeTask) {
+          const oldTask = {
+            ...activeTask,
+            status: oldTaskMode === 'pause' ? ('paused' as const) : ('active_background' as const),
+            updatedAt: now,
+          };
+          const newTask = { ...targetTask, status: 'active_primary' as const, updatedAt: now };
+
+          if (oldTaskMode === 'pause') {
+            const oldOpenSession = latestOpenSession(await repository.listSessions(activeTask.id));
+
+            if (oldOpenSession) {
+              await repository.saveSession(completeSession(oldOpenSession, now));
+            }
+          }
+
+          await repository.saveTask(oldTask);
+          await repository.saveTask(newTask);
+          if (!openSession) {
+            await repository.saveSession(createSession(taskId, now));
+          }
+          dispatch({ type: 'upsertTask', task: oldTask });
+          dispatch({ type: 'upsertTask', task: newTask });
+          return;
+        }
+
+        const task = { ...targetTask, status: 'active_primary' as const, updatedAt: now };
+        await repository.saveTask(task);
+        if (!openSession) {
+          await repository.saveSession(createSession(taskId, now));
+        }
+        dispatch({ type: 'upsertTask', task });
+      } finally {
+        startingTaskIds.current.delete(taskId);
+      }
     },
     [repository, state.tasks],
   );
@@ -131,9 +163,7 @@ export function AppStoreProvider({
 
       const now = new Date().toISOString();
       const sessions = await repository.listSessions(taskId);
-      const openSession = sessions
-        .filter((session) => !session.endedAt)
-        .sort((left, right) => right.startedAt.localeCompare(left.startedAt))[0];
+      const openSession = latestOpenSession(sessions);
 
       if (openSession) {
         await repository.saveSession(completeSession(openSession, now));
@@ -255,4 +285,14 @@ function mergeLoadedTasks(loadedTasks: Task[], currentTasks: Task[]): Task[] {
   const currentTaskIds = new Set(currentTasks.map((task) => task.id));
 
   return [...loadedTasks.filter((task) => !currentTaskIds.has(task.id)), ...currentTasks];
+}
+
+function isStartableStatus(status: Task['status']): status is StartableTaskStatus {
+  return status === 'not_started' || status === 'paused' || status === 'active_background';
+}
+
+function latestOpenSession(sessions: TaskSession[]): TaskSession | undefined {
+  return sessions
+    .filter((session) => !session.endedAt)
+    .sort((left, right) => right.startedAt.localeCompare(left.startedAt))[0];
 }

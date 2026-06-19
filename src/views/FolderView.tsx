@@ -1,6 +1,6 @@
 import { TaskStatusBadge } from '../components/TaskStatusBadge';
 import { orderTasksForFloor, QUADRANT_FLOORS } from '../domain/taskRules';
-import type { Quadrant, Task } from '../domain/types';
+import type { Quadrant, Task, TaskStatus } from '../domain/types';
 
 const floorLabels: Record<Quadrant, string> = {
   important_urgent: '重要且紧急',
@@ -12,6 +12,8 @@ const floorLabels: Record<Quadrant, string> = {
 const floors = (Object.entries(QUADRANT_FLOORS) as Array<[Quadrant, 1 | 2 | 3 | 4]>).sort(
   (left, right) => right[1] - left[1],
 );
+
+type StartableTaskStatus = 'not_started' | 'paused' | 'active_background';
 
 type FolderViewProps = {
   tasks: Task[];
@@ -56,25 +58,27 @@ function TaskList({
     <ul className="task-list folder-floor__tasks">
       {tasks.map((task) => {
         const isActive = task.status === 'active_primary';
-        const handler = isActive ? onCompleteTask : onStartTask;
+        const canStart = isStartableStatus(task.status);
+        const handler = isActive ? onCompleteTask : canStart ? onStartTask : undefined;
 
         return (
           <li key={task.id} className="task-row">
             <span>{task.title}</span>
             <div className="task-row__actions">
               <TaskStatusBadge status={task.status} isCarryover={task.isCarryover} />
-              <button
-                type="button"
-                className="task-action-button"
-                disabled={!handler}
-                onClick={() => handler?.(task.id)}
-              >
-                {isActive ? '完成' : '开始'}
-              </button>
+              {handler ? (
+                <button type="button" className="task-action-button" onClick={() => handler(task.id)}>
+                  {isActive ? '完成' : '开始'}
+                </button>
+              ) : null}
             </div>
           </li>
         );
       })}
     </ul>
   );
+}
+
+function isStartableStatus(status: TaskStatus): status is StartableTaskStatus {
+  return status === 'not_started' || status === 'paused' || status === 'active_background';
 }
