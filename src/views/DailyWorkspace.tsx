@@ -7,6 +7,7 @@ import type { HomeView, Stage } from '../domain/types';
 import { useAppStore } from '../store/appStore';
 import { FolderView } from './FolderView';
 import { GalaxyView } from './GalaxyView';
+import { ReviewPanel } from './ReviewPanel';
 
 export function DailyWorkspace() {
   const {
@@ -72,6 +73,7 @@ export function DailyWorkspace() {
               onCompleteTask={(taskId) => void completeTask(taskId)}
             />
           )}
+          {stage === 'review' ? <ReviewPanel tasks={tasks} onSubmit={() => undefined} /> : null}
         </div>
         <aside className="workspace-side" aria-label="任务创建">
           <CarryoverInbox
