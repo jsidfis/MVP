@@ -652,12 +652,12 @@ button:focus-visible {
   }
 
   .monthly-grid {
-    grid-template-columns: repeat(7, minmax(32px, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .monthly-day {
     min-height: 44px;
-    padding: 6px;
+    padding: 4px;
   }
 }
