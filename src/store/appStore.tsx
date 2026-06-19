@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type { DailyRepository } from '../data/dailyRepository';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
+import { completeSession, createSession, switchPrimaryTask } from '../domain/timeRules';
 import type { DailyFile, Quadrant, Task, UserSettings } from '../domain/types';
 
 export interface AppState {
@@ -22,12 +23,15 @@ export interface AppState {
 
 interface AppActions {
   addTask(input: { title: string; quadrant: Quadrant }): Promise<void>;
+  startTask(taskId: string, oldTaskMode?: OldTaskMode): Promise<void>;
+  completeTask(taskId: string): Promise<void>;
   confirmCarryover(taskId: string): Promise<void>;
   hideCarryoverCandidate(taskId: string): void;
   setHomeView(view: UserSettings['homeView']): Promise<void>;
 }
 
 type AppStoreValue = AppState & AppActions;
+type OldTaskMode = 'pause' | 'background';
 
 type Action =
   | { type: 'loading'; today: string }
@@ -88,6 +92,60 @@ export function AppStoreProvider({
     [repository, state.today],
   );
 
+  const startTask = useCallback(
+    async (taskId: string, oldTaskMode: OldTaskMode = 'pause') => {
+      const targetTask = state.tasks.find((task) => task.id === taskId);
+
+      if (!targetTask || targetTask.status === 'active_primary') {
+        return;
+      }
+
+      const activeTask = state.tasks.find((task) => task.status === 'active_primary');
+      const now = new Date().toISOString();
+
+      if (activeTask) {
+        const switched = switchPrimaryTask({ oldTask: activeTask, newTask: targetTask, oldTaskMode });
+        await repository.saveTask(switched.oldTask);
+        await repository.saveTask(switched.newTask);
+        await repository.saveSession(createSession(taskId, now));
+        dispatch({ type: 'upsertTask', task: switched.oldTask });
+        dispatch({ type: 'upsertTask', task: switched.newTask });
+        return;
+      }
+
+      const task = { ...targetTask, status: 'active_primary' as const, updatedAt: now };
+      await repository.saveTask(task);
+      await repository.saveSession(createSession(taskId, now));
+      dispatch({ type: 'upsertTask', task });
+    },
+    [repository, state.tasks],
+  );
+
+  const completeTask = useCallback(
+    async (taskId: string) => {
+      const targetTask = state.tasks.find((task) => task.id === taskId);
+
+      if (!targetTask) {
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const sessions = await repository.listSessions(taskId);
+      const openSession = sessions
+        .filter((session) => !session.endedAt)
+        .sort((left, right) => right.startedAt.localeCompare(left.startedAt))[0];
+
+      if (openSession) {
+        await repository.saveSession(completeSession(openSession, now));
+      }
+
+      const task = { ...targetTask, status: 'completed' as const, updatedAt: now };
+      await repository.saveTask(task);
+      dispatch({ type: 'upsertTask', task });
+    },
+    [repository, state.tasks],
+  );
+
   const confirmCarryover = useCallback(
     async (taskId: string) => {
       const candidate = state.carryoverCandidates.find((task) => task.id === taskId);
@@ -122,11 +180,13 @@ export function AppStoreProvider({
     () => ({
       ...state,
       addTask,
+      startTask,
+      completeTask,
       confirmCarryover,
       hideCarryoverCandidate,
       setHomeView,
     }),
-    [addTask, confirmCarryover, hideCarryoverCandidate, setHomeView, state],
+    [addTask, completeTask, confirmCarryover, hideCarryoverCandidate, setHomeView, startTask, state],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

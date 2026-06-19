@@ -13,7 +13,13 @@ const floors = (Object.entries(QUADRANT_FLOORS) as Array<[Quadrant, 1 | 2 | 3 | 
   (left, right) => right[1] - left[1],
 );
 
-export function FolderView({ tasks }: { tasks: Task[] }) {
+type FolderViewProps = {
+  tasks: Task[];
+  onStartTask?: (taskId: string) => void;
+  onCompleteTask?: (taskId: string) => void;
+};
+
+export function FolderView({ tasks, onStartTask, onCompleteTask }: FolderViewProps) {
   return (
     <section className="workspace-panel task-view" aria-labelledby="folder-view-title">
       <h2 id="folder-view-title">文件夹视图</h2>
@@ -28,7 +34,7 @@ export function FolderView({ tasks }: { tasks: Task[] }) {
                 <span className="folder-floor__number">{floor}F</span>
                 <h3>{floorLabels[quadrant]}</h3>
               </div>
-              <TaskList tasks={floorTasks} />
+              <TaskList tasks={floorTasks} onStartTask={onStartTask} onCompleteTask={onCompleteTask} />
             </section>
           );
         })}
@@ -37,15 +43,38 @@ export function FolderView({ tasks }: { tasks: Task[] }) {
   );
 }
 
-function TaskList({ tasks }: { tasks: Task[] }) {
+function TaskList({
+  tasks,
+  onStartTask,
+  onCompleteTask,
+}: {
+  tasks: Task[];
+  onStartTask?: (taskId: string) => void;
+  onCompleteTask?: (taskId: string) => void;
+}) {
   return (
     <ul className="task-list folder-floor__tasks">
-      {tasks.map((task) => (
-        <li key={task.id} className="task-row">
-          <span>{task.title}</span>
-          <TaskStatusBadge status={task.status} isCarryover={task.isCarryover} />
-        </li>
-      ))}
+      {tasks.map((task) => {
+        const isActive = task.status === 'active_primary';
+        const handler = isActive ? onCompleteTask : onStartTask;
+
+        return (
+          <li key={task.id} className="task-row">
+            <span>{task.title}</span>
+            <div className="task-row__actions">
+              <TaskStatusBadge status={task.status} isCarryover={task.isCarryover} />
+              <button
+                type="button"
+                className="task-action-button"
+                disabled={!handler}
+                onClick={() => handler?.(task.id)}
+              >
+                {isActive ? '完成' : '开始'}
+              </button>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

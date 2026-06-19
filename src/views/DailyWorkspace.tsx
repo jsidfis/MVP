@@ -17,6 +17,8 @@ export function DailyWorkspace() {
     carryoverCandidates,
     isLoading,
     addTask,
+    startTask,
+    completeTask,
     confirmCarryover,
     hideCarryoverCandidate,
     setHomeView,
@@ -56,7 +58,21 @@ export function DailyWorkspace() {
       </section>
 
       <div className="workspace-grid">
-        <div className="workspace-main">{currentView === 'galaxy' ? <GalaxyView tasks={tasks} /> : <FolderView tasks={tasks} />}</div>
+        <div className="workspace-main">
+          {currentView === 'galaxy' ? (
+            <GalaxyView
+              tasks={tasks}
+              onStartTask={(taskId) => void startTask(taskId, 'pause')}
+              onCompleteTask={(taskId) => void completeTask(taskId)}
+            />
+          ) : (
+            <FolderView
+              tasks={tasks}
+              onStartTask={(taskId) => void startTask(taskId, 'pause')}
+              onCompleteTask={(taskId) => void completeTask(taskId)}
+            />
+          )}
+        </div>
         <aside className="workspace-side" aria-label="任务创建">
           <CarryoverInbox
             candidates={carryoverCandidates}

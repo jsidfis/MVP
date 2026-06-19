@@ -1,7 +1,13 @@
 import { buildGalaxyLayout } from '../domain/galaxyLayout';
 import type { Task } from '../domain/types';
 
-export function GalaxyView({ tasks }: { tasks: Task[] }) {
+type GalaxyViewProps = {
+  tasks: Task[];
+  onStartTask?: (taskId: string) => void;
+  onCompleteTask?: (taskId: string) => void;
+};
+
+export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewProps) {
   const layout = buildGalaxyLayout(tasks);
   const activePlanet = layout.planets.find((planet) => planet.task.status === 'active_primary');
 
@@ -23,19 +29,28 @@ export function GalaxyView({ tasks }: { tasks: Task[] }) {
             />
           ))}
         </svg>
-        {layout.planets.map((planet) => (
-          <article
-            key={planet.task.id}
-            className={`galaxy-planet galaxy-planet--${planet.task.status}`}
-            style={{ left: `${planet.position.x}%`, top: `${planet.position.y}%` }}
-          >
+        {layout.planets.map((planet) => {
+          const isActive = planet.task.status === 'active_primary';
+          const handler = isActive ? onCompleteTask : onStartTask;
+
+          return (
+            <button
+              key={planet.task.id}
+              type="button"
+              className={`galaxy-planet galaxy-planet--${planet.task.status}`}
+              style={{ left: `${planet.position.x}%`, top: `${planet.position.y}%` }}
+              disabled={!handler}
+              onClick={() => handler?.(planet.task.id)}
+              aria-label={`${planet.task.title} ${isActive ? '完成' : '开始'}`}
+            >
             {planet.task.status === 'completed' ? (
               <span className="galaxy-flag" aria-label="完成旗帜" />
             ) : null}
             <span className="galaxy-planet__orb" aria-hidden="true" />
             <span className="galaxy-planet__title">{planet.task.title}</span>
-          </article>
-        ))}
+            </button>
+          );
+        })}
         {activePlanet ? (
           <span
             className="galaxy-ship"

@@ -296,6 +296,23 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.task-row__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-action-button {
+  min-height: 28px;
+  border-radius: 6px;
+  background: #1d2643;
+  color: #fff8ed;
+  padding: 4px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .carryover-actions {
   display: flex;
   flex: 0 0 auto;
@@ -411,9 +428,15 @@ button:focus-visible {
   justify-items: center;
   gap: 4px;
   width: 104px;
+  padding: 0;
+  background: transparent;
   color: #fff8ed;
   text-align: center;
   transform: translate(-50%, -50%);
+}
+
+.galaxy-planet:disabled {
+  opacity: 1;
 }
 
 .galaxy-planet__orb {
