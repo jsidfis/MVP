@@ -28,7 +28,41 @@ describe('buildGalaxyLayout', () => {
     expect(layout.routes[1].path).toContain('C');
     expect(layout.routes[1].completed).toBe(false);
   });
+
+  it('keeps a planet stable when a task is inserted in another quadrant', () => {
+    const baseLayout = buildGalaxyLayout([
+      task('target', 'not_started', 'important_urgent'),
+    ]);
+    const layoutWithOtherQuadrant = buildGalaxyLayout([
+      task('other', 'not_started', 'important_not_urgent'),
+      task('target', 'not_started', 'important_urgent'),
+    ]);
+
+    expect(positionFor(baseLayout, 'target')).toEqual(positionFor(layoutWithOtherQuadrant, 'target'));
+  });
+
+  it('assigns unique positions to several tasks in the same quadrant', () => {
+    const layout = buildGalaxyLayout(
+      Array.from({ length: 12 }, (_, index) =>
+        task(`task-${index}`, 'not_started', 'important_urgent'),
+      ),
+    );
+
+    const positions = layout.planets.map((planet) => `${planet.position.x},${planet.position.y}`);
+
+    expect(new Set(positions).size).toBe(positions.length);
+  });
 });
+
+function positionFor(layout: ReturnType<typeof buildGalaxyLayout>, taskId: string) {
+  const planet = layout.planets.find((item) => item.task.id === taskId);
+
+  if (!planet) {
+    throw new Error(`Missing planet ${taskId}`);
+  }
+
+  return planet.position;
+}
 
 function task(id: string, status: Task['status'], quadrant: Task['quadrant']): Task {
   return {

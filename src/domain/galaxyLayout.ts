@@ -33,10 +33,22 @@ const QUADRANT_BOUNDS: Record<Task['quadrant'], { minX: number; maxX: number; mi
 const ROUTE_START: GalaxyPoint = { x: 50, y: 50 };
 
 export function buildGalaxyLayout(tasks: Task[]): GalaxyLayout {
-  const planets = tasks.map((task, index) => ({
-    task,
-    position: positionForTask(task, index),
-  }));
+  const quadrantOrdinals: Record<Task['quadrant'], number> = {
+    important_urgent: 0,
+    important_not_urgent: 0,
+    not_important_urgent: 0,
+    not_important_not_urgent: 0,
+  };
+
+  const planets = tasks.map((task) => {
+    const ordinal = quadrantOrdinals[task.quadrant];
+    quadrantOrdinals[task.quadrant] += 1;
+
+    return {
+      task,
+      position: positionForTask(task, ordinal),
+    };
+  });
 
   const planetById = new Map(planets.map((planet) => [planet.task.id, planet]));
   let previousPoint = ROUTE_START;
@@ -65,10 +77,12 @@ export function buildGalaxyLayout(tasks: Task[]): GalaxyLayout {
   return { planets, routes };
 }
 
-function positionForTask(task: Task, index: number): GalaxyPoint {
+function positionForTask(task: Task, ordinal: number): GalaxyPoint {
   const bounds = QUADRANT_BOUNDS[task.quadrant];
-  const columnStep = ((index * 7) % 11) / 10;
-  const rowStep = ((index * 5 + 3) % 11) / 10;
+  const cycle = ordinal % 11;
+  const lap = Math.floor(ordinal / 11);
+  const columnStep = wrapStep(((cycle * 7) % 11) / 10 + lap * 0.07);
+  const rowStep = wrapStep(((cycle * 5 + 3) % 11) / 10 + lap * 0.09);
 
   return {
     x: round(bounds.minX + (bounds.maxX - bounds.minX) * columnStep),
@@ -102,4 +116,8 @@ function buildRoutePath(from: GalaxyPoint, to: GalaxyPoint, routeIndex: number):
 
 function round(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+function wrapStep(value: number): number {
+  return value % 1;
 }
