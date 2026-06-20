@@ -8,20 +8,32 @@ const repositoryPromise = createDailyRepository();
 
 export function App() {
   const [repository, setRepository] = useState<DailyRepository | null>(null);
+  const [repositoryError, setRepositoryError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    void repositoryPromise.then((createdRepository) => {
-      if (!cancelled) {
-        setRepository(createdRepository);
-      }
-    });
+    void repositoryPromise.then(
+      (createdRepository) => {
+        if (!cancelled) {
+          setRepository(createdRepository);
+        }
+      },
+      () => {
+        if (!cancelled) {
+          setRepositoryError(true);
+        }
+      },
+    );
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  if (repositoryError) {
+    return <main className="app-shell">今日工作台打开失败</main>;
+  }
 
   if (!repository) {
     return <main className="app-shell">正在打开今日工作台</main>;

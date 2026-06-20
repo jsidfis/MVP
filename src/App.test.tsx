@@ -39,4 +39,13 @@ describe('App', () => {
     expect(await screen.findByText('今日工作台')).toBeTruthy();
     expect(repositoryMocks.createDailyRepository).toHaveBeenCalledOnce();
   });
+
+  it('shows a repository loading error', async () => {
+    repositoryMocks.createDailyRepository.mockRejectedValue(new Error('Database failed'));
+    const { App } = await import('./App');
+
+    render(<App />);
+
+    expect(await screen.findByText('今日工作台打开失败')).toBeTruthy();
+  });
 });
