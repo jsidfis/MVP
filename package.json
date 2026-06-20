@@ -9,7 +9,12 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "setup:windows-gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 setup",
+    "tauri:fetch:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 fetch",
+    "tauri:check:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 check",
+    "tauri:dev:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 dev",
+    "tauri:build:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
