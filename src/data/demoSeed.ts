@@ -123,7 +123,7 @@ function demoTask(
     status: input.status,
     isCarryover: input.status === 'postponed',
     carryoverFromDate: input.status === 'postponed' ? addDays(date, -1) : undefined,
-    postponeReasonTag: input.status === 'postponed' ? 'energy_low' : undefined,
+    postponeReasonTag: input.status === 'postponed' ? 'low_energy' : undefined,
     postponeReasonNote: input.postponeReasonNote,
     createdAt: `${date}T${input.hour}:00.000Z`,
     updatedAt: `${date}T${input.hour}:00.000Z`,

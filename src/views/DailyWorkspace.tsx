@@ -3,13 +3,19 @@ import { CarryoverInbox } from '../components/CarryoverInbox';
 import { StageTabs } from '../components/StageTabs';
 import { TaskQuickAdd } from '../components/TaskQuickAdd';
 import { ViewSwitch } from '../components/ViewSwitch';
+import type { WorkspaceMode } from '../data/workspaceMode';
 import type { HomeView, Stage } from '../domain/types';
 import { useAppStore } from '../store/appStore';
 import { FolderView } from './FolderView';
 import { GalaxyView } from './GalaxyView';
 import { ReviewPanel } from './ReviewPanel';
 
-export function DailyWorkspace() {
+type DailyWorkspaceProps = {
+  workspaceMode: WorkspaceMode;
+  onChangeWorkspaceMode(mode: WorkspaceMode): void;
+};
+
+export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWorkspaceProps) {
   const {
     today,
     dailyFile,
@@ -48,9 +54,21 @@ export function DailyWorkspace() {
           <p className="workspace-date">{today}</p>
           <h1>今天工作台</h1>
         </div>
-        <button type="button" className="secondary-button">
-          月度总览
-        </button>
+        <div className="workspace-header-actions">
+          <span className="workspace-mode-badge">
+            {workspaceMode === 'demo' ? '示例数据' : '我的数据'}
+          </span>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => onChangeWorkspaceMode(workspaceMode === 'demo' ? 'user' : 'demo')}
+          >
+            {workspaceMode === 'demo' ? '切换到我的数据' : '切换到示例'}
+          </button>
+          <button type="button" className="secondary-button">
+            月度总览
+          </button>
+        </div>
       </header>
 
       <section className="workspace-toolbar" aria-label="工作台控制">

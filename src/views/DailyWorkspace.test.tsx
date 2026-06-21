@@ -1,7 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MemoryDailyRepository } from '../data/memoryDailyRepository';
+import type { WorkspaceMode } from '../data/workspaceMode';
 import type { Task } from '../domain/types';
 import { AppStoreProvider } from '../store/appStore';
 import { DailyWorkspace } from './DailyWorkspace';
@@ -81,12 +82,29 @@ describe('DailyWorkspace', () => {
     expect(screen.queryByText('昨天的任务')).toBeNull();
     await expect(repository.listTasks(today)).resolves.toEqual([]);
   });
+
+  it('shows the current workspace mode and can switch to demo data', async () => {
+    const repository = new MemoryDailyRepository();
+    const onChangeWorkspaceMode = vi.fn();
+    renderWorkspace(repository, 'user', onChangeWorkspaceMode);
+
+    await waitForLoaded();
+
+    expect(screen.getByText('我的数据')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: '切换到示例' }));
+
+    expect(onChangeWorkspaceMode).toHaveBeenCalledWith('demo');
+  });
 });
 
-function renderWorkspace(repository: MemoryDailyRepository) {
+function renderWorkspace(
+  repository: MemoryDailyRepository,
+  workspaceMode: WorkspaceMode = 'user',
+  onChangeWorkspaceMode: (mode: WorkspaceMode) => void = vi.fn(),
+) {
   return render(
     <AppStoreProvider repository={repository} today={today}>
-      <DailyWorkspace />
+      <DailyWorkspace workspaceMode={workspaceMode} onChangeWorkspaceMode={onChangeWorkspaceMode} />
     </AppStoreProvider>,
   );
 }
