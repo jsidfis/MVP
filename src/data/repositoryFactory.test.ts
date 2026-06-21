@@ -18,22 +18,22 @@ describe('createDailyRepository', () => {
   });
 
   it('creates a memory repository outside Tauri', async () => {
-    const repository = await createDailyRepository();
+    const repository = await createDailyRepository('user');
 
     expect(repository).toBeInstanceOf(MemoryDailyRepository);
     expect(tauriMocks.createTauriSqlDailyRepository).not.toHaveBeenCalled();
   });
 
-  it('creates a Tauri SQL repository inside Tauri', async () => {
+  it('creates a Tauri SQL repository for the selected workspace mode inside Tauri', async () => {
     tauriMocks.createTauriSqlDailyRepository.mockResolvedValue(tauriMocks.repository);
     Object.defineProperty(window, '__TAURI_INTERNALS__', {
       configurable: true,
       value: {},
     });
 
-    const repository = await createDailyRepository();
+    const repository = await createDailyRepository('demo');
 
     expect(repository).toBe(tauriMocks.repository);
-    expect(tauriMocks.createTauriSqlDailyRepository).toHaveBeenCalledOnce();
+    expect(tauriMocks.createTauriSqlDailyRepository).toHaveBeenCalledWith('demo');
   });
 });

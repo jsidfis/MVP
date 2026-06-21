@@ -1,4 +1,6 @@
 import Database from '@tauri-apps/plugin-sql';
+import { createPortableDatabaseUrl } from './portableDatabase';
+import type { WorkspaceMode } from './workspaceMode';
 import type {
   DailyFile,
   HomeView,
@@ -64,8 +66,8 @@ const DEFAULT_SETTINGS: UserSettings = {
   notificationsEnabled: false,
 };
 
-export async function createTauriSqlDailyRepository(): Promise<DailyRepository> {
-  const db = await Database.load('sqlite:daily-plan-review.db');
+export async function createTauriSqlDailyRepository(mode: WorkspaceMode): Promise<DailyRepository> {
+  const db = await Database.load(await createPortableDatabaseUrl(mode));
 
   for (const statement of SCHEMA_STATEMENTS) {
     await db.execute(statement);

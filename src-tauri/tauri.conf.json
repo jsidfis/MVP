@@ -32,10 +32,5 @@
         "language": "zh-CN"
       }
     }
-  },
-  "plugins": {
-    "sql": {
-      "preload": ["sqlite:daily-plan-review.db"]
-    }
   }
 }
