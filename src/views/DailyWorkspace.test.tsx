@@ -95,6 +95,16 @@ describe('DailyWorkspace', () => {
 
     expect(onChangeWorkspaceMode).toHaveBeenCalledWith('demo');
   });
+
+  it('shows data safety controls in the workspace side panel', async () => {
+    const repository = new MemoryDailyRepository();
+    renderWorkspace(repository);
+
+    await waitForLoaded();
+
+    expect(screen.getByText('data/user.sqlite')).toBeTruthy();
+    expect(screen.getByText('data/demo.sqlite')).toBeTruthy();
+  });
 });
 
 function renderWorkspace(

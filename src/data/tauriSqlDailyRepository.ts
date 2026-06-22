@@ -324,6 +324,14 @@ function createRepository(db: SqlDatabase): DailyRepository {
         ],
       );
     },
+
+    async clearAllData() {
+      await db.execute('DELETE FROM review_decisions');
+      await db.execute('DELETE FROM task_sessions');
+      await db.execute('DELETE FROM tasks');
+      await db.execute('DELETE FROM daily_files');
+      await db.execute('DELETE FROM user_settings');
+    },
   };
 }
 

@@ -9,6 +9,10 @@ import {
   type ReactNode,
 } from 'react';
 import type { DailyRepository } from '../data/dailyRepository';
+import { ensureDemoData } from '../data/demoSeed';
+import { exportDailyPlanData } from '../data/exportData';
+import { importDailyPlanData } from '../data/importData';
+import { createReadableDailyArchive } from '../data/readableExport';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
 import { completeSession, createSession } from '../domain/timeRules';
 import type { DailyFile, Quadrant, Task, TaskSession, UserSettings } from '../domain/types';
@@ -28,7 +32,12 @@ interface AppActions {
   completeTask(taskId: string): Promise<void>;
   confirmCarryover(taskId: string): Promise<void>;
   hideCarryoverCandidate(taskId: string): void;
+  saveSettings(settings: UserSettings): Promise<void>;
   setHomeView(view: UserSettings['homeView']): Promise<void>;
+  exportJsonBackup(): Promise<string>;
+  exportMarkdownArchive(): Promise<string>;
+  importJsonBackup(payload: unknown): Promise<void>;
+  resetDemoData(): Promise<void>;
 }
 
 type AppStoreValue = AppState & AppActions;
@@ -39,6 +48,13 @@ type Action =
   | { type: 'loading'; today: string }
   | {
       type: 'loaded';
+      dailyFile: DailyFile;
+      settings: UserSettings;
+      tasks: Task[];
+      carryoverCandidates: Task[];
+    }
+  | {
+      type: 'reloaded';
       dailyFile: DailyFile;
       settings: UserSettings;
       tasks: Task[];
@@ -68,12 +84,7 @@ export function AppStoreProvider({
 
     dispatch({ type: 'loading', today });
 
-    Promise.all([
-      repository.getDailyFile(today),
-      repository.getSettings(),
-      repository.listTasks(today),
-      repository.listCarryoverCandidates(today),
-    ]).then(([dailyFile, settings, tasks, carryoverCandidates]) => {
+    loadRepositoryState(repository, today).then(({ dailyFile, settings, tasks, carryoverCandidates }) => {
       if (!cancelled) {
         dispatch({ type: 'loaded', dailyFile, settings, tasks, carryoverCandidates });
       }
@@ -191,20 +202,52 @@ export function AppStoreProvider({
     [repository, state.carryoverCandidates, state.today],
   );
 
+  const saveSettings = useCallback(
+    async (settings: UserSettings) => {
+      await repository.saveSettings(settings);
+      dispatch({ type: 'settingsUpdated', settings });
+    },
+    [repository],
+  );
+
   const setHomeView = useCallback(
     async (view: UserSettings['homeView']) => {
       const currentSettings = state.settings ?? (await repository.getSettings());
       const settings = { ...currentSettings, homeView: view };
 
-      await repository.saveSettings(settings);
-      dispatch({ type: 'settingsUpdated', settings });
+      await saveSettings(settings);
     },
-    [repository, state.settings],
+    [repository, saveSettings, state.settings],
   );
 
   const hideCarryoverCandidate = useCallback((taskId: string) => {
     dispatch({ type: 'hiddenCarryoverCandidate', taskId });
   }, []);
+
+  const exportJsonBackup = useCallback(async () => {
+    const data = await exportDailyPlanData(repository);
+    return JSON.stringify(data, null, 2);
+  }, [repository]);
+
+  const exportMarkdownArchive = useCallback(async () => {
+    return createReadableDailyArchive(await exportDailyPlanData(repository));
+  }, [repository]);
+
+  const importJsonBackup = useCallback(
+    async (payload: unknown) => {
+      await importDailyPlanData(repository, payload);
+      const loaded = await loadRepositoryState(repository, state.today);
+      dispatch({ type: 'reloaded', ...loaded });
+    },
+    [repository, state.today],
+  );
+
+  const resetDemoData = useCallback(async () => {
+    await repository.clearAllData();
+    await ensureDemoData(repository, state.today);
+    const loaded = await loadRepositoryState(repository, state.today);
+    dispatch({ type: 'reloaded', ...loaded });
+  }, [repository, state.today]);
 
   const value = useMemo(
     () => ({
@@ -214,9 +257,27 @@ export function AppStoreProvider({
       completeTask,
       confirmCarryover,
       hideCarryoverCandidate,
+      saveSettings,
       setHomeView,
+      exportJsonBackup,
+      exportMarkdownArchive,
+      importJsonBackup,
+      resetDemoData,
     }),
-    [addTask, completeTask, confirmCarryover, hideCarryoverCandidate, setHomeView, startTask, state],
+    [
+      addTask,
+      completeTask,
+      confirmCarryover,
+      exportJsonBackup,
+      exportMarkdownArchive,
+      hideCarryoverCandidate,
+      importJsonBackup,
+      resetDemoData,
+      saveSettings,
+      setHomeView,
+      startTask,
+      state,
+    ],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
@@ -259,6 +320,15 @@ function reducer(state: AppState, action: Action): AppState {
         isLoading: false,
       };
     }
+    case 'reloaded':
+      return {
+        ...state,
+        dailyFile: action.dailyFile,
+        settings: action.settings,
+        tasks: action.tasks,
+        carryoverCandidates: action.carryoverCandidates,
+        isLoading: false,
+      };
     case 'upsertTask':
       return { ...state, tasks: upsertTask(state.tasks, action.task) };
     case 'confirmedCarryover':
@@ -275,6 +345,17 @@ function reducer(state: AppState, action: Action): AppState {
     case 'settingsUpdated':
       return { ...state, settings: action.settings };
   }
+}
+
+async function loadRepositoryState(repository: DailyRepository, today: string) {
+  const [dailyFile, settings, tasks, carryoverCandidates] = await Promise.all([
+    repository.getDailyFile(today),
+    repository.getSettings(),
+    repository.listTasks(today),
+    repository.listCarryoverCandidates(today),
+  ]);
+
+  return { dailyFile, settings, tasks, carryoverCandidates };
 }
 
 function upsertTask(tasks: Task[], task: Task): Task[] {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryDailyRepository } from './memoryDailyRepository';
-import type { DailyFile, Task, TaskSession, UserSettings } from '../domain/types';
+import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
 
 describe('MemoryDailyRepository', () => {
   it('creates a default daily file on first read', async () => {
@@ -115,6 +115,31 @@ describe('MemoryDailyRepository', () => {
     await repository.saveSettings(settings);
 
     await expect(repository.getSettings()).resolves.toEqual(settings);
+  });
+
+  it('clears daily files, tasks, sessions, review decisions, and settings', async () => {
+    const repository = new MemoryDailyRepository();
+
+    await repository.saveDailyFile(dailyFile('2026-06-17'));
+    await repository.saveTask(task('task-1', '2026-06-17', 'completed'));
+    await repository.saveSession(session('session-1', 'task-1'));
+    await repository.saveReviewDecision(reviewDecision('decision-1', 'task-1'));
+    await repository.saveSettings({
+      homeView: 'galaxy',
+      notificationsEnabled: true,
+      morningReminder: '08:30',
+    });
+
+    await repository.clearAllData();
+
+    await expect(repository.listDailyFiles()).resolves.toEqual([]);
+    await expect(repository.listAllTasks()).resolves.toEqual([]);
+    await expect(repository.listAllSessions()).resolves.toEqual([]);
+    await expect(repository.listReviewDecisions()).resolves.toEqual([]);
+    await expect(repository.getSettings()).resolves.toEqual({
+      homeView: 'folder',
+      notificationsEnabled: false,
+    });
   });
 
   it('isolates saved daily file objects from later caller mutations', async () => {
@@ -272,5 +297,16 @@ function session(id: string, taskId: string): TaskSession {
     taskId,
     startedAt: '2026-06-17T09:00:00.000Z',
     isManual: true,
+  };
+}
+
+function reviewDecision(id: string, taskId: string): ReviewDecision {
+  return {
+    id,
+    taskId,
+    action: 'postpone',
+    targetDate: '2026-06-18',
+    reasonTag: 'time_estimate_error',
+    createdAt: '2026-06-17T20:00:00.000Z',
   };
 }

@@ -25,4 +25,16 @@ describe('SettingsPanel', () => {
       notificationsEnabled: true,
     });
   });
+
+  it('includes data safety controls', () => {
+    render(
+      <SettingsPanel
+        settings={{ homeView: 'folder', notificationsEnabled: false }}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('data/user.sqlite')).toBeTruthy();
+    expect(screen.getByText('data/demo.sqlite')).toBeTruthy();
+  });
 });

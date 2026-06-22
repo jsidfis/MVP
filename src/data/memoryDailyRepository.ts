@@ -92,6 +92,14 @@ export class MemoryDailyRepository implements DailyRepository {
   async saveSettings(settings: UserSettings): Promise<void> {
     this.settings = cloneSettings(settings);
   }
+
+  async clearAllData(): Promise<void> {
+    this.dailyFiles.clear();
+    this.tasks.clear();
+    this.sessions.clear();
+    this.reviewDecisions.clear();
+    this.settings = undefined;
+  }
 }
 
 function cloneDailyFile(file: DailyFile): DailyFile {

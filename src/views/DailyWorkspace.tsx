@@ -5,6 +5,7 @@ import { TaskQuickAdd } from '../components/TaskQuickAdd';
 import { ViewSwitch } from '../components/ViewSwitch';
 import type { WorkspaceMode } from '../data/workspaceMode';
 import type { HomeView, Stage } from '../domain/types';
+import { SettingsPanel } from '../settings/SettingsPanel';
 import { useAppStore } from '../store/appStore';
 import { FolderView } from './FolderView';
 import { GalaxyView } from './GalaxyView';
@@ -28,10 +29,16 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
     completeTask,
     confirmCarryover,
     hideCarryoverCandidate,
+    saveSettings,
     setHomeView,
+    exportJsonBackup,
+    exportMarkdownArchive,
+    importJsonBackup,
+    resetDemoData,
   } = useAppStore();
   const [stage, setStage] = useState<Stage>('plan');
   const currentView = settings?.homeView ?? 'folder';
+  const currentSettings = settings ?? { homeView: currentView, notificationsEnabled: false };
 
   useEffect(() => {
     if (dailyFile?.stage) {
@@ -101,6 +108,19 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
           />
           <section className="workspace-panel" aria-label="快速添加任务">
             <TaskQuickAdd onAdd={addTask} />
+          </section>
+          <section className="workspace-panel" aria-label="设置">
+            <SettingsPanel
+              settings={currentSettings}
+              onSave={(nextSettings) => void saveSettings(nextSettings)}
+              dataSafety={{
+                onExportJson: exportJsonBackup,
+                onExportMarkdown: exportMarkdownArchive,
+                onImportJson: importJsonBackup,
+                onResetDemo: resetDemoData,
+                canResetDemo: workspaceMode === 'demo',
+              }}
+            />
           </section>
         </aside>
       </div>

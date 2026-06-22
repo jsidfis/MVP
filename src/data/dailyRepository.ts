@@ -15,4 +15,5 @@ export interface DailyRepository {
   listCarryoverCandidates(today: string): Promise<Task[]>;
   getSettings(): Promise<UserSettings>;
   saveSettings(settings: UserSettings): Promise<void>;
+  clearAllData(): Promise<void>;
 }

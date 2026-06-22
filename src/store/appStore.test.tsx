@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryDailyRepository } from '../data/memoryDailyRepository';
 import type { DailyRepository } from '../data/dailyRepository';
@@ -134,6 +135,38 @@ describe('AppStoreProvider', () => {
       notificationsEnabled: false,
     });
   });
+
+  it('exports and imports JSON backups through store actions', async () => {
+    const repository = new MemoryDailyRepository();
+    await repository.saveDailyFile({ date: today, stage: 'plan', goal: 'Original goal' });
+    await repository.saveTask(task('task-original', today, 'not_started', 'Original task'));
+    renderStore(repository);
+    await waitFor(() => expectText('loading', 'loaded'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'export json' }));
+
+    await waitFor(() => expect(screen.getByTestId('exported-json').textContent).toContain('Original task'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'import json' }));
+
+    await waitFor(() => expectText('goal', 'Imported goal'));
+    expect(screen.getByTestId('tasks').textContent).toContain('Imported task');
+  });
+
+  it('resets the current repository with demo data', async () => {
+    const repository = new MemoryDailyRepository();
+    await repository.saveTask(task('custom-task', today, 'not_started', 'Custom task'));
+    renderStore(repository);
+    await waitFor(() => expectText('loading', 'loaded'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'reset demo' }));
+
+    await waitFor(async () => {
+      const tasks = await repository.listTasks(today);
+      expect(tasks.some((item) => item.id === 'demo-task-1')).toBe(true);
+      expect(tasks.some((item) => item.id === 'custom-task')).toBe(false);
+    });
+  });
 });
 
 describe('useAppStore', () => {
@@ -152,6 +185,7 @@ function renderStore(repository: DailyRepository) {
 
 function StoreProbe() {
   const store = useAppStore();
+  const [exportedJson, setExportedJson] = useState('');
 
   return (
     <div>
@@ -170,9 +204,40 @@ function StoreProbe() {
       <button type="button" onClick={() => store.setHomeView('galaxy')}>
         set galaxy
       </button>
+      <button type="button" onClick={() => void store.exportJsonBackup().then(setExportedJson)}>
+        export json
+      </button>
+      <button type="button" onClick={() => void store.importJsonBackup(importedBackup)}>
+        import json
+      </button>
+      <button type="button" onClick={() => void store.resetDemoData()}>
+        reset demo
+      </button>
+      <span data-testid="exported-json">{exportedJson}</span>
     </div>
   );
 }
+
+const importedBackup = {
+  schemaVersion: 1,
+  exportedAt: '2026-06-18T20:00:00.000Z',
+  settings: { homeView: 'galaxy', notificationsEnabled: false },
+  dailyFiles: [{ date: today, stage: 'execute', goal: 'Imported goal' }],
+  tasks: [
+    {
+      id: 'task-imported',
+      date: today,
+      title: 'Imported task',
+      quadrant: 'important_urgent',
+      status: 'not_started',
+      isCarryover: false,
+      createdAt: '2026-06-18T08:00:00.000Z',
+      updatedAt: '2026-06-18T08:00:00.000Z',
+    },
+  ],
+  sessions: [],
+  reviewDecisions: [],
+};
 
 function HookConsumer() {
   useAppStore();
@@ -295,6 +360,11 @@ class DelayedLoadRepository implements DailyRepository {
 
   async saveSettings(settings: UserSettings): Promise<void> {
     this.settings = { ...settings };
+  }
+
+  async clearAllData(): Promise<void> {
+    this.tasks.clear();
+    this.settings = { homeView: 'folder', notificationsEnabled: false };
   }
 }
 
