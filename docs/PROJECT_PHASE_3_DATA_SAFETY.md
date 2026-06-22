@@ -1,6 +1,6 @@
 # 三阶段方案：数据安全和可恢复性
 
-当前执行状态：规划中。对应实施计划见 `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md` 的 Phase 3。
+当前执行状态：验收中。Task 1-5 已完成，Task 6 正在做最终文档和手动验收。对应实施计划见 `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md` 的 Phase 3。
 
 ## 1. 阶段目标
 
@@ -41,6 +41,8 @@
 - 任务执行记录，包括开始时间、结束时间、手动记录标记和实际耗时。
 - 复盘决策，包括顺延、放弃、改期和原因。
 
+当前 JSON 备份已经覆盖以上范围，格式由 `src/data/exportData.ts` 定义，导入校验由 `src/data/importData.ts` 负责。
+
 人类可读导出优先覆盖：
 
 - 日期。
@@ -76,6 +78,11 @@ type ExportedDailyPlanData = {
 - 前端业务代码不直接读 SQLite 表。
 - 未来结构变化必须新增迁移或兼容逻辑，不直接破坏旧导出。
 
+当前实现：
+
+- `导出 JSON 备份` 生成可恢复的完整 JSON。
+- `导出 Markdown 档案` 生成便于人工阅读的每日档案，不作为恢复格式。
+
 ## 6. 导入策略
 
 导入必须先校验，再写入。
@@ -96,6 +103,8 @@ type ExportedDailyPlanData = {
 - 不做冲突解决。
 - 不从第三方格式导入。
 
+当前实现会先完成整包校验，再写入仓库。校验失败时不会写入任何数据。应用内入口采用粘贴 JSON 的方式，文件选择器和复杂合并不在本阶段范围内。
+
 ## 7. 示例数据重置
 
 示例数据重置只影响 `data/demo.sqlite`。
@@ -105,6 +114,8 @@ type ExportedDailyPlanData = {
 - 不修改 `data/user.sqlite`。
 - 重置后重新写入当前版本 demo seed。
 - 如果用户已经修改示例数据，需要明确提示会覆盖示例数据。
+
+当前实现通过数据安全面板触发示例数据重置。重置逻辑清空当前 demo 仓库后重新写入内置 demo seed；我的数据模式下按钮禁用。
 
 ## 8. 用户提示和文档
 
@@ -116,6 +127,13 @@ README 和应用内说明必须让用户理解：
 - 发给别人体验时不要发送带有真实 `data/user.sqlite` 的个人文件夹。
 - 备份时复制整个便携文件夹，或至少复制 `data/`。
 - 迁移到新位置时复制整个便携文件夹最稳妥。
+
+当前 README 已补充：
+
+- JSON 备份和导入的使用方式。
+- Markdown 档案的定位。
+- 便携 zip 默认只包含空 `data/` 文件夹。
+- 发给别人体验时不要发送自己已经使用过的便携文件夹。
 
 ## 9. 测试边界
 
@@ -147,6 +165,12 @@ README 和应用内说明必须让用户理解：
 - README 明确说明如何备份、恢复、迁移和发包。
 - 便携 zip 重新生成后仍能启动。
 - `npm.cmd run test:run`、`npm.cmd run build`、`npm.cmd run tauri:check:gnu`、`npm.cmd run portable:build:gnu` 通过。
+
+当前验收记录：
+
+- 自动测试覆盖 JSON 导出、JSON 导入、Markdown 可读导出、demo 重置和数据安全面板。
+- 便携 zip 内容 smoke 已检查：未包含 `src`、`src-tauri`、`node_modules`、`.git` 或真实 `data/user.sqlite`。
+- GUI 级完整恢复流程仍建议在每次正式发布前手动走一遍。
 
 ## 11. 风险
 
