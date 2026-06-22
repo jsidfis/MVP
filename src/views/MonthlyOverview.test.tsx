@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { MonthlyInsights } from '../domain/insightRules';
 import type { Task } from '../domain/types';
@@ -57,8 +57,27 @@ describe('MonthlyOverview', () => {
       />,
     );
 
-    expect(screen.getByLabelText('月度星系地图')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '2026-06-16 完成 1/1' })).toBeTruthy();
+    const galaxyMap = screen.getByLabelText('月度星系地图');
+
+    expect(galaxyMap).toBeTruthy();
+    expect(within(galaxyMap).getByRole('button', { name: '2026-06-16 完成 1/1' })).toBeTruthy();
+  });
+
+  it('renders the monthly file cabinet as the archive grid', () => {
+    render(
+      <MonthlyOverview
+        year={2026}
+        month={6}
+        recordedDates={['2026-06-16']}
+        insights={monthlyInsights}
+        tasks={monthlyTasks}
+      />,
+    );
+
+    const fileCabinet = screen.getByLabelText('月度文件柜');
+
+    expect(fileCabinet).toBeTruthy();
+    expect(within(fileCabinet).getByRole('button', { name: '2026-06-16 完成 1/1' })).toBeTruthy();
   });
 });
 

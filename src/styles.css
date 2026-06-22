@@ -976,6 +976,113 @@ button:focus-visible {
   font-size: 13px;
 }
 
+.monthly-file-cabinet {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid rgba(84, 69, 48, 0.14);
+  padding-top: 14px;
+}
+
+.monthly-file-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(42px, 1fr));
+  gap: 8px;
+}
+
+.monthly-file-day {
+  display: grid;
+  gap: 4px;
+  min-height: 60px;
+  border: 1px solid #d8c7ae;
+  border-radius: 6px;
+  background: #fffaf2;
+  color: #5d4f3e;
+  padding: 8px 6px;
+  text-align: left;
+}
+
+.monthly-file-day span {
+  color: inherit;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.monthly-file-day small {
+  color: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  opacity: 0.78;
+}
+
+.monthly-file-day:hover,
+.monthly-file-day:focus-visible {
+  border-color: #2f6f73;
+  outline: 3px solid rgba(47, 111, 115, 0.22);
+  outline-offset: 2px;
+}
+
+.monthly-file-day[aria-pressed="true"] {
+  border-color: #1d2643;
+  box-shadow: 0 0 0 3px rgba(29, 38, 67, 0.11);
+}
+
+.monthly-file-day-recorded {
+  background: #f4eadc;
+}
+
+.monthly-file-day-completed {
+  border-color: #2f6f73;
+  background: #2f6f73;
+  color: #fff8ed;
+}
+
+.monthly-file-detail {
+  display: grid;
+  gap: 8px;
+}
+
+.monthly-file-detail h3 {
+  margin: 0;
+  color: #1d2643;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.monthly-file-detail ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.monthly-file-detail li {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+  border-bottom: 1px solid rgba(84, 69, 48, 0.12);
+  padding-bottom: 8px;
+}
+
+.monthly-file-detail li span {
+  min-width: 0;
+  color: #3c342b;
+  overflow-wrap: anywhere;
+}
+
+.monthly-file-detail li strong {
+  color: #1d2643;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.monthly-file-detail p {
+  margin: 0;
+  color: #7a6b58;
+  font-size: 13px;
+}
+
 .monthly-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(42px, 1fr));
@@ -1079,6 +1186,16 @@ button:focus-visible {
     width: 28px;
     height: 28px;
     font-size: 11px;
+  }
+
+  .monthly-file-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .monthly-file-day {
+    min-height: 48px;
+    padding: 6px 4px;
   }
 
   .monthly-day {
