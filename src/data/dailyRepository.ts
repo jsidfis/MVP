@@ -1,4 +1,5 @@
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
+import type { TaskTemplate } from './taskTemplates';
 
 export interface DailyRepository {
   getDailyFile(date: string): Promise<DailyFile>;
@@ -7,6 +8,8 @@ export interface DailyRepository {
   listTasks(date: string): Promise<Task[]>;
   saveTask(task: Task): Promise<void>;
   listAllTasks(): Promise<Task[]>;
+  listTaskTemplates(): Promise<TaskTemplate[]>;
+  saveTaskTemplate(template: TaskTemplate): Promise<void>;
   listSessions(taskId: string): Promise<TaskSession[]>;
   saveSession(session: TaskSession): Promise<void>;
   listAllSessions(): Promise<TaskSession[]>;

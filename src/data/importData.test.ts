@@ -3,6 +3,7 @@ import { MemoryDailyRepository } from './memoryDailyRepository';
 import { exportDailyPlanData, type ExportedDailyPlanData } from './exportData';
 import { importDailyPlanData } from './importData';
 import type { DailyFile, ReviewDecision, Task, TaskSession } from '../domain/types';
+import type { TaskTemplate } from './taskTemplates';
 
 describe('importDailyPlanData', () => {
   it('imports a valid export into an empty repository', async () => {
@@ -29,6 +30,7 @@ describe('importDailyPlanData', () => {
       settings: { homeView: 'folder', notificationsEnabled: false },
       dailyFiles: [],
       tasks: [],
+      taskTemplates: [],
       sessions: [],
       reviewDecisions: [],
     });
@@ -44,6 +46,7 @@ describe('importDailyPlanData', () => {
         settings: { homeView: 'folder', notificationsEnabled: false },
         dailyFiles: [],
         tasks: [],
+        taskTemplates: [],
         sessions: [],
         reviewDecisions: [],
       }),
@@ -64,6 +67,7 @@ describe('importDailyPlanData', () => {
         settings: { homeView: 'folder', notificationsEnabled: false },
         dailyFiles: [{ date: '2026-06-23', stage: 'plan', goal: 'This must not be written' }],
         tasks: [{ id: 'bad-task' }],
+        taskTemplates: [],
         sessions: [],
         reviewDecisions: [],
       }),
@@ -127,6 +131,19 @@ async function seedRepository(repository: MemoryDailyRepository) {
     reasonNote: 'Need validation rules first',
     createdAt: '2026-06-22T20:05:00.000Z',
   };
+  const taskTemplate: TaskTemplate = {
+    id: 'template-morning',
+    name: 'Morning routine',
+    createdAt: '2026-06-22T08:00:00.000Z',
+    updatedAt: '2026-06-22T08:00:00.000Z',
+    items: [
+      {
+        title: 'Export local data',
+        quadrant: 'important_urgent',
+        plannedDurationMinutes: 30,
+      },
+    ],
+  };
 
   await repository.saveSettings({
     homeView: 'galaxy',
@@ -137,6 +154,7 @@ async function seedRepository(repository: MemoryDailyRepository) {
   await repository.saveDailyFile(dailyFile);
   await repository.saveTask(completedTask);
   await repository.saveTask(postponedTask);
+  await repository.saveTaskTemplate(taskTemplate);
   await repository.saveSession(session);
   await repository.saveReviewDecision(reviewDecision);
 }

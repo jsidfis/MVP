@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryDailyRepository } from './memoryDailyRepository';
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
+import type { TaskTemplate } from './taskTemplates';
 
 describe('MemoryDailyRepository', () => {
   it('creates a default daily file on first read', async () => {
@@ -51,6 +52,25 @@ describe('MemoryDailyRepository', () => {
     expect(tasks).toContainEqual(updatedFirst);
     expect(tasks).toContainEqual(second);
     expect(tasks).not.toContainEqual(first);
+  });
+
+  it('saves, lists, and upserts task templates', async () => {
+    const repository = new MemoryDailyRepository();
+    const template = taskTemplate('template-1', 'Morning routine');
+    const updatedTemplate = {
+      ...template,
+      name: 'Updated routine',
+      updatedAt: '2026-06-17T10:00:00.000Z',
+    };
+
+    await repository.saveTaskTemplate(template);
+    await repository.saveTaskTemplate(taskTemplate('template-2', 'Review routine'));
+    await repository.saveTaskTemplate(updatedTemplate);
+
+    await expect(repository.listTaskTemplates()).resolves.toEqual([
+      updatedTemplate,
+      taskTemplate('template-2', 'Review routine'),
+    ]);
   });
 
   it('saves, lists, and upserts sessions by task id', async () => {
@@ -134,6 +154,7 @@ describe('MemoryDailyRepository', () => {
 
     await expect(repository.listDailyFiles()).resolves.toEqual([]);
     await expect(repository.listAllTasks()).resolves.toEqual([]);
+    await expect(repository.listTaskTemplates()).resolves.toEqual([]);
     await expect(repository.listAllSessions()).resolves.toEqual([]);
     await expect(repository.listReviewDecisions()).resolves.toEqual([]);
     await expect(repository.getSettings()).resolves.toEqual({
@@ -189,6 +210,27 @@ describe('MemoryDailyRepository', () => {
 
     await expect(repository.listTasks('2026-06-17')).resolves.toEqual([
       task('task-1', '2026-06-17', 'not_started'),
+    ]);
+  });
+
+  it('isolates saved and returned task templates from later caller mutations', async () => {
+    const repository = new MemoryDailyRepository();
+    const saved = taskTemplate('template-1', 'Morning routine');
+
+    await repository.saveTaskTemplate(saved);
+    saved.name = 'Mutated outside repository';
+    saved.items[0].title = 'Mutated task';
+
+    await expect(repository.listTaskTemplates()).resolves.toEqual([
+      taskTemplate('template-1', 'Morning routine'),
+    ]);
+
+    const [returned] = await repository.listTaskTemplates();
+    returned.name = 'Mutated returned template';
+    returned.items[0].title = 'Mutated returned task';
+
+    await expect(repository.listTaskTemplates()).resolves.toEqual([
+      taskTemplate('template-1', 'Morning routine'),
     ]);
   });
 
@@ -288,6 +330,22 @@ function task(id: string, date: string, status: Task['status']): Task {
     postponeReasonTag: status === 'postponed' ? 'time_estimate_error' : undefined,
     createdAt: `${date}T08:00:00.000Z`,
     updatedAt: `${date}T08:00:00.000Z`,
+  };
+}
+
+function taskTemplate(id: string, name: string): TaskTemplate {
+  return {
+    id,
+    name,
+    createdAt: '2026-06-17T09:00:00.000Z',
+    updatedAt: '2026-06-17T09:00:00.000Z',
+    items: [
+      {
+        title: 'Plan day',
+        quadrant: 'important_urgent',
+        plannedDurationMinutes: 30,
+      },
+    ],
   };
 }
 

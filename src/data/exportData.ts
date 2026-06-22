@@ -1,5 +1,6 @@
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
 import type { DailyRepository } from './dailyRepository';
+import type { TaskTemplate } from './taskTemplates';
 
 export interface ExportedDailyPlanData {
   schemaVersion: 1;
@@ -7,6 +8,7 @@ export interface ExportedDailyPlanData {
   settings: UserSettings;
   dailyFiles: DailyFile[];
   tasks: Task[];
+  taskTemplates: TaskTemplate[];
   sessions: TaskSession[];
   reviewDecisions: ReviewDecision[];
 }
@@ -19,10 +21,11 @@ export async function exportDailyPlanData(
   repository: DailyRepository,
   options: ExportDailyPlanDataOptions = {},
 ): Promise<ExportedDailyPlanData> {
-  const [settings, dailyFiles, tasks, sessions, reviewDecisions] = await Promise.all([
+  const [settings, dailyFiles, tasks, taskTemplates, sessions, reviewDecisions] = await Promise.all([
     repository.getSettings(),
     repository.listDailyFiles(),
     repository.listAllTasks(),
+    repository.listTaskTemplates(),
     repository.listAllSessions(),
     repository.listReviewDecisions(),
   ]);
@@ -33,6 +36,7 @@ export async function exportDailyPlanData(
     settings,
     dailyFiles,
     tasks,
+    taskTemplates,
     sessions,
     reviewDecisions,
   };

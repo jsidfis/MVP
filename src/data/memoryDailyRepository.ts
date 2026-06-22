@@ -1,5 +1,6 @@
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
 import type { DailyRepository } from './dailyRepository';
+import type { TaskTemplate } from './taskTemplates';
 
 const DEFAULT_SETTINGS: UserSettings = {
   homeView: 'folder',
@@ -9,6 +10,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 export class MemoryDailyRepository implements DailyRepository {
   private readonly dailyFiles = new Map<string, DailyFile>();
   private readonly tasks = new Map<string, Task>();
+  private readonly taskTemplates = new Map<string, TaskTemplate>();
   private readonly sessions = new Map<string, TaskSession>();
   private readonly reviewDecisions = new Map<string, ReviewDecision>();
   private settings?: UserSettings;
@@ -51,6 +53,16 @@ export class MemoryDailyRepository implements DailyRepository {
           left.date.localeCompare(right.date) || left.createdAt.localeCompare(right.createdAt),
       )
       .map(cloneTask);
+  }
+
+  async listTaskTemplates(): Promise<TaskTemplate[]> {
+    return Array.from(this.taskTemplates.values())
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .map(cloneTaskTemplate);
+  }
+
+  async saveTaskTemplate(template: TaskTemplate): Promise<void> {
+    this.taskTemplates.set(template.id, cloneTaskTemplate(template));
   }
 
   async listSessions(taskId: string): Promise<TaskSession[]> {
@@ -96,6 +108,7 @@ export class MemoryDailyRepository implements DailyRepository {
   async clearAllData(): Promise<void> {
     this.dailyFiles.clear();
     this.tasks.clear();
+    this.taskTemplates.clear();
     this.sessions.clear();
     this.reviewDecisions.clear();
     this.settings = undefined;
@@ -114,6 +127,13 @@ function cloneDailyFile(file: DailyFile): DailyFile {
 
 function cloneTask(task: Task): Task {
   return { ...task };
+}
+
+function cloneTaskTemplate(template: TaskTemplate): TaskTemplate {
+  return {
+    ...template,
+    items: template.items.map((item) => ({ ...item })),
+  };
 }
 
 function cloneSession(session: TaskSession): TaskSession {

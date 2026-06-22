@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MemoryDailyRepository } from './memoryDailyRepository';
 import { exportDailyPlanData } from './exportData';
 import type { DailyFile, ReviewDecision, Task, TaskSession } from '../domain/types';
+import type { TaskTemplate } from './taskTemplates';
 
 describe('exportDailyPlanData', () => {
   it('exports settings, daily files, tasks, sessions, and review decisions', async () => {
@@ -59,6 +60,19 @@ describe('exportDailyPlanData', () => {
       reasonNote: '导出字段确认花了更久',
       createdAt: '2026-06-22T21:00:00.000Z',
     };
+    const taskTemplate: TaskTemplate = {
+      id: 'template-1',
+      name: 'Morning routine',
+      createdAt: '2026-06-22T08:00:00.000Z',
+      updatedAt: '2026-06-22T08:00:00.000Z',
+      items: [
+        {
+          title: '鏁寸悊瀵煎嚭瀛楁',
+          quadrant: 'important_urgent',
+          plannedDurationMinutes: 30,
+        },
+      ],
+    };
 
     await repository.saveSettings({
       homeView: 'galaxy',
@@ -69,6 +83,7 @@ describe('exportDailyPlanData', () => {
     await repository.saveDailyFile(dailyFile);
     await repository.saveTask(completedTask);
     await repository.saveTask(postponedTask);
+    await repository.saveTaskTemplate(taskTemplate);
     await repository.saveSession(session);
     await repository.saveReviewDecision(reviewDecision);
 
@@ -85,6 +100,7 @@ describe('exportDailyPlanData', () => {
       },
       dailyFiles: [dailyFile],
       tasks: [completedTask, postponedTask],
+      taskTemplates: [taskTemplate],
       sessions: [session],
       reviewDecisions: [reviewDecision],
     });
@@ -104,6 +120,7 @@ describe('exportDailyPlanData', () => {
       },
       dailyFiles: [],
       tasks: [],
+      taskTemplates: [],
       sessions: [],
       reviewDecisions: [],
     });

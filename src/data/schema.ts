@@ -18,9 +18,17 @@ export const SCHEMA_STATEMENTS = [
     quadrant TEXT NOT NULL,
     status TEXT NOT NULL,
     is_carryover INTEGER NOT NULL,
+    planned_duration_minutes INTEGER,
     carryover_from_date TEXT,
     postpone_reason_tag TEXT,
     postpone_reason_note TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS task_templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    items_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,

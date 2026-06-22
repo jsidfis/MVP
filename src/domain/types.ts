@@ -32,6 +32,7 @@ export interface Task {
   quadrant: Quadrant;
   status: TaskStatus;
   isCarryover: boolean;
+  plannedDurationMinutes?: number;
   carryoverFromDate?: string;
   postponeReasonTag?: ReasonTag;
   postponeReasonNote?: string;

@@ -13,6 +13,11 @@ import { ensureDemoData } from '../data/demoSeed';
 import { exportDailyPlanData } from '../data/exportData';
 import { importDailyPlanData } from '../data/importData';
 import { createReadableDailyArchive } from '../data/readableExport';
+import {
+  applyTaskTemplate as buildTasksFromTemplate,
+  createTaskTemplate,
+  type TaskTemplate,
+} from '../data/taskTemplates';
 import { calculateMonthlyInsights, type MonthlyInsights } from '../domain/insightRules';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
 import { completeSession, createSession } from '../domain/timeRules';
@@ -23,6 +28,7 @@ export interface AppState {
   dailyFile?: DailyFile;
   settings?: UserSettings;
   tasks: Task[];
+  taskTemplates: TaskTemplate[];
   carryoverCandidates: Task[];
   monthlyOverview?: MonthlyOverviewState;
   isLoading: boolean;
@@ -30,6 +36,8 @@ export interface AppState {
 
 interface AppActions {
   addTask(input: { title: string; quadrant: Quadrant }): Promise<void>;
+  saveTaskTemplate(input: { name: string; taskIds: string[] }): Promise<void>;
+  applyTaskTemplate(templateId: string): Promise<void>;
   startTask(taskId: string, oldTaskMode?: OldTaskMode): Promise<void>;
   completeTask(taskId: string): Promise<void>;
   confirmCarryover(taskId: string): Promise<void>;
@@ -62,6 +70,7 @@ type Action =
       dailyFile: DailyFile;
       settings: UserSettings;
       tasks: Task[];
+      taskTemplates: TaskTemplate[];
       carryoverCandidates: Task[];
     }
   | {
@@ -69,9 +78,12 @@ type Action =
       dailyFile: DailyFile;
       settings: UserSettings;
       tasks: Task[];
+      taskTemplates: TaskTemplate[];
       carryoverCandidates: Task[];
     }
   | { type: 'upsertTask'; task: Task }
+  | { type: 'upsertTasks'; tasks: Task[] }
+  | { type: 'upsertTaskTemplate'; template: TaskTemplate }
   | { type: 'confirmedCarryover'; task: Task; candidateId: string }
   | { type: 'hiddenCarryoverCandidate'; taskId: string }
   | { type: 'settingsUpdated'; settings: UserSettings }
@@ -96,11 +108,13 @@ export function AppStoreProvider({
 
     dispatch({ type: 'loading', today });
 
-    loadRepositoryState(repository, today).then(({ dailyFile, settings, tasks, carryoverCandidates }) => {
-      if (!cancelled) {
-        dispatch({ type: 'loaded', dailyFile, settings, tasks, carryoverCandidates });
-      }
-    });
+    loadRepositoryState(repository, today).then(
+      ({ dailyFile, settings, tasks, taskTemplates, carryoverCandidates }) => {
+        if (!cancelled) {
+          dispatch({ type: 'loaded', dailyFile, settings, tasks, taskTemplates, carryoverCandidates });
+        }
+      },
+    );
 
     return () => {
       cancelled = true;
@@ -116,6 +130,45 @@ export function AppStoreProvider({
       dispatch({ type: 'upsertTask', task });
     },
     [repository, state.today],
+  );
+
+  const saveTaskTemplate = useCallback(
+    async (input: { name: string; taskIds: string[] }) => {
+      const now = new Date().toISOString();
+      const template = createTaskTemplate({
+        id: crypto.randomUUID(),
+        name: input.name,
+        tasks: state.tasks,
+        selectedTaskIds: input.taskIds,
+        now,
+      });
+
+      await repository.saveTaskTemplate(template);
+      dispatch({ type: 'upsertTaskTemplate', template });
+    },
+    [repository, state.tasks],
+  );
+
+  const applyTaskTemplate = useCallback(
+    async (templateId: string) => {
+      const template = state.taskTemplates.find((item) => item.id === templateId);
+
+      if (!template) {
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const tasks = buildTasksFromTemplate({
+        template,
+        date: state.today,
+        now,
+        idFactory: () => crypto.randomUUID(),
+      });
+
+      await Promise.all(tasks.map((task) => repository.saveTask(task)));
+      dispatch({ type: 'upsertTasks', tasks });
+    },
+    [repository, state.taskTemplates, state.today],
   );
 
   const startTask = useCallback(
@@ -294,6 +347,8 @@ export function AppStoreProvider({
     () => ({
       ...state,
       addTask,
+      saveTaskTemplate,
+      applyTaskTemplate,
       startTask,
       completeTask,
       confirmCarryover,
@@ -308,6 +363,8 @@ export function AppStoreProvider({
     }),
     [
       addTask,
+      saveTaskTemplate,
+      applyTaskTemplate,
       completeTask,
       confirmCarryover,
       exportJsonBackup,
@@ -340,6 +397,7 @@ function initialState(today: string): AppState {
   return {
     today,
     tasks: [],
+    taskTemplates: [],
     carryoverCandidates: [],
     isLoading: true,
   };
@@ -351,12 +409,14 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, today: action.today, isLoading: true };
     case 'loaded': {
       const tasks = mergeLoadedTasks(action.tasks, state.tasks);
+      const taskTemplates = mergeLoadedTaskTemplates(action.taskTemplates, state.taskTemplates);
 
       return {
         ...state,
         dailyFile: action.dailyFile,
         settings: state.settings ?? action.settings,
         tasks,
+        taskTemplates,
         carryoverCandidates: action.carryoverCandidates.filter(
           (candidate) => !tasks.some((task) => task.id === candidate.id),
         ),
@@ -369,11 +429,16 @@ function reducer(state: AppState, action: Action): AppState {
         dailyFile: action.dailyFile,
         settings: action.settings,
         tasks: action.tasks,
+        taskTemplates: action.taskTemplates,
         carryoverCandidates: action.carryoverCandidates,
         isLoading: false,
       };
     case 'upsertTask':
       return { ...state, tasks: upsertTask(state.tasks, action.task) };
+    case 'upsertTasks':
+      return { ...state, tasks: action.tasks.reduce(upsertTask, state.tasks) };
+    case 'upsertTaskTemplate':
+      return { ...state, taskTemplates: upsertTaskTemplate(state.taskTemplates, action.template) };
     case 'confirmedCarryover':
       return {
         ...state,
@@ -393,14 +458,15 @@ function reducer(state: AppState, action: Action): AppState {
 }
 
 async function loadRepositoryState(repository: DailyRepository, today: string) {
-  const [dailyFile, settings, tasks, carryoverCandidates] = await Promise.all([
+  const [dailyFile, settings, tasks, taskTemplates, carryoverCandidates] = await Promise.all([
     repository.getDailyFile(today),
     repository.getSettings(),
     repository.listTasks(today),
+    repository.listTaskTemplates(),
     repository.listCarryoverCandidates(today),
   ]);
 
-  return { dailyFile, settings, tasks, carryoverCandidates };
+  return { dailyFile, settings, tasks, taskTemplates, carryoverCandidates };
 }
 
 function upsertTask(tasks: Task[], task: Task): Task[] {
@@ -411,6 +477,19 @@ function mergeLoadedTasks(loadedTasks: Task[], currentTasks: Task[]): Task[] {
   const currentTaskIds = new Set(currentTasks.map((task) => task.id));
 
   return [...loadedTasks.filter((task) => !currentTaskIds.has(task.id)), ...currentTasks];
+}
+
+function upsertTaskTemplate(templates: TaskTemplate[], template: TaskTemplate): TaskTemplate[] {
+  return [...templates.filter((item) => item.id !== template.id), template];
+}
+
+function mergeLoadedTaskTemplates(
+  loadedTemplates: TaskTemplate[],
+  currentTemplates: TaskTemplate[],
+): TaskTemplate[] {
+  const currentTemplateIds = new Set(currentTemplates.map((template) => template.id));
+
+  return [...loadedTemplates.filter((template) => !currentTemplateIds.has(template.id)), ...currentTemplates];
 }
 
 function isStartableStatus(status: Task['status']): status is StartableTaskStatus {

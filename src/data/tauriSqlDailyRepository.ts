@@ -15,6 +15,7 @@ import type {
 } from '../domain/types';
 import type { DailyRepository } from './dailyRepository';
 import { SCHEMA_STATEMENTS } from './schema';
+import type { TaskTemplate } from './taskTemplates';
 
 type SqlDatabase = Awaited<ReturnType<typeof Database.load>>;
 
@@ -38,9 +39,18 @@ interface TaskRow {
   quadrant: Quadrant;
   status: TaskStatus;
   is_carryover: number;
+  planned_duration_minutes: number | null;
   carryover_from_date: string | null;
   postpone_reason_tag: ReasonTag | null;
   postpone_reason_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TaskTemplateRow {
+  id: string;
+  name: string;
+  items_json: string;
   created_at: string;
   updated_at: string;
 }
@@ -82,6 +92,7 @@ export async function createTauriSqlDailyRepository(mode: WorkspaceMode): Promis
   for (const statement of SCHEMA_STATEMENTS) {
     await db.execute(statement);
   }
+  await ensureColumn(db, 'tasks', 'planned_duration_minutes', 'INTEGER');
 
   return createRepository(db);
 }
@@ -167,18 +178,20 @@ function createRepository(db: SqlDatabase): DailyRepository {
           quadrant,
           status,
           is_carryover,
+          planned_duration_minutes,
           carryover_from_date,
           postpone_reason_tag,
           postpone_reason_note,
           created_at,
           updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         ON CONFLICT(id) DO UPDATE SET
           date = excluded.date,
           title = excluded.title,
           quadrant = excluded.quadrant,
           status = excluded.status,
           is_carryover = excluded.is_carryover,
+          planned_duration_minutes = excluded.planned_duration_minutes,
           carryover_from_date = excluded.carryover_from_date,
           postpone_reason_tag = excluded.postpone_reason_tag,
           postpone_reason_note = excluded.postpone_reason_note,
@@ -190,6 +203,7 @@ function createRepository(db: SqlDatabase): DailyRepository {
           task.quadrant,
           task.status,
           task.isCarryover ? 1 : 0,
+          task.plannedDurationMinutes ?? null,
           task.carryoverFromDate ?? null,
           task.postponeReasonTag ?? null,
           task.postponeReasonNote ?? null,
@@ -204,6 +218,36 @@ function createRepository(db: SqlDatabase): DailyRepository {
         'SELECT * FROM tasks ORDER BY date ASC, created_at ASC',
       );
       return rows.map(mapTask);
+    },
+
+    async listTaskTemplates() {
+      const rows = await db.select<TaskTemplateRow[]>(
+        'SELECT * FROM task_templates ORDER BY created_at ASC',
+      );
+      return rows.map(mapTaskTemplate);
+    },
+
+    async saveTaskTemplate(template) {
+      await db.execute(
+        `INSERT INTO task_templates (
+          id,
+          name,
+          items_json,
+          created_at,
+          updated_at
+        ) VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT(id) DO UPDATE SET
+          name = excluded.name,
+          items_json = excluded.items_json,
+          updated_at = excluded.updated_at`,
+        [
+          template.id,
+          template.name,
+          JSON.stringify(template.items),
+          template.createdAt,
+          template.updatedAt,
+        ],
+      );
     },
 
     async listSessions(taskId) {
@@ -328,6 +372,7 @@ function createRepository(db: SqlDatabase): DailyRepository {
     async clearAllData() {
       await db.execute('DELETE FROM review_decisions');
       await db.execute('DELETE FROM task_sessions');
+      await db.execute('DELETE FROM task_templates');
       await db.execute('DELETE FROM tasks');
       await db.execute('DELETE FROM daily_files');
       await db.execute('DELETE FROM user_settings');
@@ -380,11 +425,22 @@ function mapTask(row: TaskRow): Task {
     date: row.date,
     title: row.title,
     quadrant: row.quadrant,
-    status: row.status,
-    isCarryover: toBoolean(row.is_carryover),
-    carryoverFromDate: row.carryover_from_date ?? undefined,
+      status: row.status,
+      isCarryover: toBoolean(row.is_carryover),
+      plannedDurationMinutes: row.planned_duration_minutes ?? undefined,
+      carryoverFromDate: row.carryover_from_date ?? undefined,
     postponeReasonTag: row.postpone_reason_tag ?? undefined,
     postponeReasonNote: row.postpone_reason_note ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapTaskTemplate(row: TaskTemplateRow): TaskTemplate {
+  return {
+    id: row.id,
+    name: row.name,
+    items: JSON.parse(row.items_json) as TaskTemplate['items'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -412,4 +468,17 @@ function mapSettings(row: UserSettingsRow): UserSettings {
 
 function toBoolean(value: number): boolean {
   return value !== 0;
+}
+
+async function ensureColumn(
+  db: SqlDatabase,
+  tableName: string,
+  columnName: string,
+  columnDefinition: string,
+) {
+  const columns = await db.select<Array<{ name: string }>>(`PRAGMA table_info(${tableName})`);
+
+  if (!columns.some((column) => column.name === columnName)) {
+    await db.execute(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`);
+  }
 }

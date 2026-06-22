@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryDailyRepository } from '../data/memoryDailyRepository';
 import type { DailyRepository } from '../data/dailyRepository';
+import type { TaskTemplate } from '../data/taskTemplates';
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
 import { AppStoreProvider, useAppStore } from './appStore';
 
@@ -235,6 +236,7 @@ const importedBackup = {
       updatedAt: '2026-06-18T08:00:00.000Z',
     },
   ],
+  taskTemplates: [],
   sessions: [],
   reviewDecisions: [],
 };
@@ -321,6 +323,13 @@ class DelayedLoadRepository implements DailyRepository {
     await this.initialLoad.promise;
     return snapshot;
   }
+
+  async listTaskTemplates(): Promise<TaskTemplate[]> {
+    await this.initialLoad.promise;
+    return [];
+  }
+
+  async saveTaskTemplate(): Promise<void> {}
 
   async listSessions(): Promise<TaskSession[]> {
     return [];

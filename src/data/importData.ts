@@ -13,6 +13,7 @@ import type {
 } from '../domain/types';
 import type { DailyRepository } from './dailyRepository';
 import type { ExportedDailyPlanData } from './exportData';
+import type { TaskTemplate, TaskTemplateItem } from './taskTemplates';
 
 const HOME_VIEWS: readonly HomeView[] = ['folder', 'galaxy'];
 const STAGES: readonly Stage[] = ['plan', 'execute', 'review'];
@@ -58,6 +59,10 @@ export async function importDailyPlanData(
     await repository.saveTask(task);
   }
 
+  for (const template of data.taskTemplates) {
+    await repository.saveTaskTemplate(template);
+  }
+
   for (const session of data.sessions) {
     await repository.saveSession(session);
   }
@@ -80,6 +85,10 @@ function readExportedData(value: unknown): ExportedDailyPlanData {
     settings: readSettings(object.settings),
     dailyFiles: readArray(object.dailyFiles, 'dailyFiles').map(readDailyFile),
     tasks: readArray(object.tasks, 'tasks').map(readTask),
+    taskTemplates:
+      object.taskTemplates === undefined
+        ? []
+        : readArray(object.taskTemplates, 'taskTemplates').map(readTaskTemplate),
     sessions: readArray(object.sessions, 'sessions').map(readSession),
     reviewDecisions: readArray(object.reviewDecisions, 'reviewDecisions').map(readReviewDecision),
   };
@@ -134,6 +143,10 @@ function readTask(value: unknown): Task {
     quadrant: readEnum(object.quadrant, QUADRANTS, 'task.quadrant'),
     status: readEnum(object.status, TASK_STATUSES, 'task.status'),
     isCarryover: readBoolean(object.isCarryover, 'task.isCarryover'),
+    plannedDurationMinutes: readOptionalNumber(
+      object.plannedDurationMinutes,
+      'task.plannedDurationMinutes',
+    ),
     carryoverFromDate: readOptionalString(object.carryoverFromDate, 'task.carryoverFromDate'),
     postponeReasonTag:
       object.postponeReasonTag === undefined
@@ -142,6 +155,31 @@ function readTask(value: unknown): Task {
     postponeReasonNote: readOptionalString(object.postponeReasonNote, 'task.postponeReasonNote'),
     createdAt: readString(object.createdAt, 'task.createdAt'),
     updatedAt: readString(object.updatedAt, 'task.updatedAt'),
+  };
+}
+
+function readTaskTemplate(value: unknown): TaskTemplate {
+  const object = readObject(value, 'taskTemplate');
+
+  return {
+    id: readString(object.id, 'taskTemplate.id'),
+    name: readString(object.name, 'taskTemplate.name'),
+    items: readArray(object.items, 'taskTemplate.items').map(readTaskTemplateItem),
+    createdAt: readString(object.createdAt, 'taskTemplate.createdAt'),
+    updatedAt: readString(object.updatedAt, 'taskTemplate.updatedAt'),
+  };
+}
+
+function readTaskTemplateItem(value: unknown): TaskTemplateItem {
+  const object = readObject(value, 'taskTemplate.item');
+
+  return {
+    title: readString(object.title, 'taskTemplate.item.title'),
+    quadrant: readEnum(object.quadrant, QUADRANTS, 'taskTemplate.item.quadrant'),
+    plannedDurationMinutes: readOptionalNumber(
+      object.plannedDurationMinutes,
+      'taskTemplate.item.plannedDurationMinutes',
+    ),
   };
 }
 

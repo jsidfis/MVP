@@ -11,6 +11,7 @@ import { FolderView } from './FolderView';
 import { GalaxyView } from './GalaxyView';
 import { MonthlyOverview } from './MonthlyOverview';
 import { ReviewPanel } from './ReviewPanel';
+import { TaskTemplatePanel } from './TaskTemplatePanel';
 
 type DailyWorkspaceProps = {
   workspaceMode: WorkspaceMode;
@@ -23,10 +24,13 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
     dailyFile,
     settings,
     tasks,
+    taskTemplates,
     carryoverCandidates,
     monthlyOverview,
     isLoading,
     addTask,
+    saveTaskTemplate,
+    applyTaskTemplate,
     startTask,
     completeTask,
     confirmCarryover,
@@ -126,6 +130,12 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
           <section className="workspace-panel" aria-label="快速添加任务">
             <TaskQuickAdd onAdd={addTask} />
           </section>
+          <TaskTemplatePanel
+            tasks={tasks}
+            templates={taskTemplates}
+            onSaveTemplate={saveTaskTemplate}
+            onApplyTemplate={applyTaskTemplate}
+          />
           <section className="workspace-panel" aria-label="设置">
             <SettingsPanel
               settings={currentSettings}
