@@ -188,7 +188,12 @@ npm run tauri:build:gnu
 
 ## 12. 后续扩展
 
-便携体验版稳定后，再考虑：
+便携体验版稳定后的完整路线见：
+
+- `docs/PROJECT_FUTURE_ROADMAP.md`
+- `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md`
+
+后续重点包括：
 
 - GitHub Release 自动化。
 - 示例数据一键恢复。
