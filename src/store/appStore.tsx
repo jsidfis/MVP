@@ -13,6 +13,7 @@ import { ensureDemoData } from '../data/demoSeed';
 import { exportDailyPlanData } from '../data/exportData';
 import { importDailyPlanData } from '../data/importData';
 import { createReadableDailyArchive } from '../data/readableExport';
+import { calculateMonthlyInsights, type MonthlyInsights } from '../domain/insightRules';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
 import { completeSession, createSession } from '../domain/timeRules';
 import type { DailyFile, Quadrant, Task, TaskSession, UserSettings } from '../domain/types';
@@ -23,6 +24,7 @@ export interface AppState {
   settings?: UserSettings;
   tasks: Task[];
   carryoverCandidates: Task[];
+  monthlyOverview?: MonthlyOverviewState;
   isLoading: boolean;
 }
 
@@ -38,11 +40,20 @@ interface AppActions {
   exportMarkdownArchive(): Promise<string>;
   importJsonBackup(payload: unknown): Promise<void>;
   resetDemoData(): Promise<void>;
+  loadMonthlyOverview(input: { year: number; month: number }): Promise<void>;
 }
 
 type AppStoreValue = AppState & AppActions;
 type OldTaskMode = 'pause' | 'background';
 type StartableTaskStatus = 'not_started' | 'paused' | 'active_background';
+
+export interface MonthlyOverviewState {
+  year: number;
+  month: number;
+  recordedDates: string[];
+  tasks: Task[];
+  insights: MonthlyInsights;
+}
 
 type Action =
   | { type: 'loading'; today: string }
@@ -63,7 +74,8 @@ type Action =
   | { type: 'upsertTask'; task: Task }
   | { type: 'confirmedCarryover'; task: Task; candidateId: string }
   | { type: 'hiddenCarryoverCandidate'; taskId: string }
-  | { type: 'settingsUpdated'; settings: UserSettings };
+  | { type: 'settingsUpdated'; settings: UserSettings }
+  | { type: 'monthlyOverviewLoaded'; monthlyOverview: MonthlyOverviewState };
 
 const AppStoreContext = createContext<AppStoreValue | null>(null);
 
@@ -249,6 +261,35 @@ export function AppStoreProvider({
     dispatch({ type: 'reloaded', ...loaded });
   }, [repository, state.today]);
 
+  const loadMonthlyOverview = useCallback(
+    async (input: { year: number; month: number }) => {
+      const [dailyFiles, allTasks, sessions] = await Promise.all([
+        repository.listDailyFiles(),
+        repository.listAllTasks(),
+        repository.listAllSessions(),
+      ]);
+      const monthPrefix = `${input.year}-${String(input.month).padStart(2, '0')}-`;
+      const tasks = allTasks.filter((task) => task.date.startsWith(monthPrefix));
+      const recordedDates = Array.from(
+        new Set([
+          ...dailyFiles.filter((file) => file.date.startsWith(monthPrefix)).map((file) => file.date),
+          ...tasks.map((task) => task.date),
+        ]),
+      ).sort();
+
+      dispatch({
+        type: 'monthlyOverviewLoaded',
+        monthlyOverview: {
+          ...input,
+          recordedDates,
+          tasks,
+          insights: calculateMonthlyInsights({ ...input, tasks: allTasks, sessions }),
+        },
+      });
+    },
+    [repository],
+  );
+
   const value = useMemo(
     () => ({
       ...state,
@@ -263,6 +304,7 @@ export function AppStoreProvider({
       exportMarkdownArchive,
       importJsonBackup,
       resetDemoData,
+      loadMonthlyOverview,
     }),
     [
       addTask,
@@ -272,6 +314,7 @@ export function AppStoreProvider({
       exportMarkdownArchive,
       hideCarryoverCandidate,
       importJsonBackup,
+      loadMonthlyOverview,
       resetDemoData,
       saveSettings,
       setHomeView,
@@ -344,6 +387,8 @@ function reducer(state: AppState, action: Action): AppState {
       };
     case 'settingsUpdated':
       return { ...state, settings: action.settings };
+    case 'monthlyOverviewLoaded':
+      return { ...state, monthlyOverview: action.monthlyOverview };
   }
 }
 

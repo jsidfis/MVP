@@ -9,6 +9,7 @@ import { SettingsPanel } from '../settings/SettingsPanel';
 import { useAppStore } from '../store/appStore';
 import { FolderView } from './FolderView';
 import { GalaxyView } from './GalaxyView';
+import { MonthlyOverview } from './MonthlyOverview';
 import { ReviewPanel } from './ReviewPanel';
 
 type DailyWorkspaceProps = {
@@ -23,6 +24,7 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
     settings,
     tasks,
     carryoverCandidates,
+    monthlyOverview,
     isLoading,
     addTask,
     startTask,
@@ -35,10 +37,12 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
     exportMarkdownArchive,
     importJsonBackup,
     resetDemoData,
+    loadMonthlyOverview,
   } = useAppStore();
   const [stage, setStage] = useState<Stage>('plan');
   const currentView = settings?.homeView ?? 'folder';
   const currentSettings = settings ?? { homeView: currentView, notificationsEnabled: false };
+  const [currentYear, currentMonth] = today.split('-').map(Number);
 
   useEffect(() => {
     if (dailyFile?.stage) {
@@ -72,7 +76,11 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
           >
             {workspaceMode === 'demo' ? '切换到我的数据' : '切换到示例'}
           </button>
-          <button type="button" className="secondary-button">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void loadMonthlyOverview({ year: currentYear, month: currentMonth })}
+          >
             月度总览
           </button>
         </div>
@@ -99,6 +107,15 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
             />
           )}
           {stage === 'review' ? <ReviewPanel tasks={tasks} onSubmit={() => undefined} /> : null}
+          {monthlyOverview ? (
+            <MonthlyOverview
+              year={monthlyOverview.year}
+              month={monthlyOverview.month}
+              recordedDates={monthlyOverview.recordedDates}
+              insights={monthlyOverview.insights}
+              tasks={monthlyOverview.tasks}
+            />
+          ) : null}
         </div>
         <aside className="workspace-side" aria-label="任务创建">
           <CarryoverInbox

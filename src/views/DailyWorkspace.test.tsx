@@ -105,6 +105,25 @@ describe('DailyWorkspace', () => {
     expect(screen.getByText('data/user.sqlite')).toBeTruthy();
     expect(screen.getByText('data/demo.sqlite')).toBeTruthy();
   });
+
+  it('opens monthly overview with current month task data', async () => {
+    const repository = new MemoryDailyRepository();
+    await repository.saveTask({
+      ...task('task-month', today, '完成月度接入'),
+      status: 'completed',
+      postponeReasonTag: undefined,
+      postponeReasonNote: undefined,
+    });
+    renderWorkspace(repository);
+
+    await waitForLoaded();
+    await userEvent.click(screen.getByRole('button', { name: '月度总览' }));
+
+    expect(await screen.findByRole('heading', { name: '月度总览' })).toBeTruthy();
+    expect(screen.getByText('本月完成率')).toBeTruthy();
+    const fileCabinet = screen.getByLabelText('月度文件柜');
+    expect(within(fileCabinet).getByRole('button', { name: '2026-06-18 完成 1/1' })).toBeTruthy();
+  });
 });
 
 function renderWorkspace(
