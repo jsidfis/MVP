@@ -24,6 +24,7 @@ import {
   type RecurrenceFrequency,
   type RecurringTaskRule,
 } from '../domain/recurrenceRules';
+import { searchTasks as filterTasks, type TaskSearchFilters } from '../domain/searchRules';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
 import { completeSession, createSession } from '../domain/timeRules';
 import type { DailyFile, Quadrant, Task, TaskSession, UserSettings } from '../domain/types';
@@ -55,6 +56,7 @@ interface AppActions {
   importJsonBackup(payload: unknown): Promise<void>;
   resetDemoData(): Promise<void>;
   loadMonthlyOverview(input: { year: number; month: number }): Promise<void>;
+  searchTasks(filters: TaskSearchFilters): Promise<Task[]>;
 }
 
 type AppStoreValue = AppState & AppActions;
@@ -383,6 +385,13 @@ export function AppStoreProvider({
     [repository],
   );
 
+  const searchTasks = useCallback(
+    async (filters: TaskSearchFilters) => {
+      return filterTasks(await repository.listAllTasks(), filters);
+    },
+    [repository],
+  );
+
   const value = useMemo(
     () => ({
       ...state,
@@ -400,6 +409,7 @@ export function AppStoreProvider({
       importJsonBackup,
       resetDemoData,
       loadMonthlyOverview,
+      searchTasks,
     }),
     [
       addTask,
@@ -414,6 +424,7 @@ export function AppStoreProvider({
       loadMonthlyOverview,
       resetDemoData,
       saveSettings,
+      searchTasks,
       setHomeView,
       startTask,
       state,

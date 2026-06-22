@@ -11,6 +11,7 @@ import { FolderView } from './FolderView';
 import { GalaxyView } from './GalaxyView';
 import { MonthlyOverview } from './MonthlyOverview';
 import { ReviewPanel } from './ReviewPanel';
+import { SearchPanel } from './SearchPanel';
 import { TaskTemplatePanel } from './TaskTemplatePanel';
 
 type DailyWorkspaceProps = {
@@ -42,6 +43,7 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
     importJsonBackup,
     resetDemoData,
     loadMonthlyOverview,
+    searchTasks,
   } = useAppStore();
   const [stage, setStage] = useState<Stage>('plan');
   const currentView = settings?.homeView ?? 'folder';
@@ -136,6 +138,7 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
             onSaveTemplate={saveTaskTemplate}
             onApplyTemplate={applyTaskTemplate}
           />
+          <SearchPanel onSearch={searchTasks} />
           <section className="workspace-panel" aria-label="设置">
             <SettingsPanel
               settings={currentSettings}
