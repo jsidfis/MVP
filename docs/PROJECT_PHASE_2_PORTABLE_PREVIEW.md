@@ -1,5 +1,7 @@
 # 二阶段方案：便携体验版
 
+当前执行状态：便携体验版已完成基础打包和验证。对应实现计划见 `docs/superpowers/plans/2026-06-21-portable-preview-implementation.md`。
+
 ## 1. 阶段目标
 
 二阶段第一步目标是把当前 MVP 从“开发环境可运行”推进到“可以发给其他用户体验”的便携版。
@@ -10,7 +12,7 @@
 每日计划与复盘-v0.2.0-portable.zip
 ```
 
-用户解压后双击应用程序即可体验，不需要安装 Node.js、Rust、VSCode 或 Visual Studio。
+用户解压后双击应用程序即可体验，不需要安装 Node.js、Rust、VSCode 或 Visual Studio；但目标电脑需要已有 Microsoft Edge WebView2 Runtime。
 
 ## 2. 核心假设
 

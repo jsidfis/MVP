@@ -1,7 +1,7 @@
 {
   "name": "daily-plan-review",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,8 @@
     "tauri:fetch:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 fetch",
     "tauri:check:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 check",
     "tauri:dev:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 dev",
-    "tauri:build:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 build"
+    "tauri:build:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-gnu.ps1 build",
+    "portable:build:gnu": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/portable-release.ps1"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

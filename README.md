@@ -2,7 +2,7 @@
 
 一个本地优先的个人桌面应用，用于早上计划、白天执行、晚上复盘。
 
-当前状态是 MVP 开发版：可以本地运行和试用核心流程，但还不是正式安装包。
+当前状态是 MVP 便携体验版：可以本地运行核心流程，也可以生成 zip 发给其他用户试用。
 
 ## 功能范围
 
@@ -76,6 +76,34 @@ npm run tauri:dev:gnu
 
 不建议用 `npm run dev` 作为日常使用入口。它只启动浏览器网页开发服务，主要用于前端调试，不是完整桌面应用流程。
 
+## 便携体验版
+
+二阶段目标是生成一个可以直接发给其他用户体验的便携包：
+
+```powershell
+npm run portable:build:gnu
+```
+
+生成后查看：
+
+```text
+dist-portable/每日计划与复盘-v0.2.0-portable.zip
+```
+
+体验者解压后双击 `每日计划与复盘.exe`。便携版数据保存在解压文件夹内：
+
+- `data/user.sqlite`：我的数据
+- `data/demo.sqlite`：示例数据
+
+需要重置时，关闭应用后删除对应数据库即可：
+
+- 删除 `data/user.sqlite`：重置我的数据
+- 删除 `data/demo.sqlite`：重置示例数据
+
+发送给别人体验时，请发送整个 zip，不要只发送 exe。
+
+运行前提：对方电脑需要已有 Microsoft Edge WebView2 Runtime。多数 Windows 10/11 环境已经自带；如果打不开应用，优先安装 WebView2 Runtime，或改用后续整理的安装版。
+
 ## 常用命令
 
 ```powershell
@@ -106,7 +134,13 @@ npm run build
 npm run tauri:build:gnu
 ```
 
-尝试构建桌面包。当前阶段优先使用 `tauri:dev:gnu` 试用，正式发布包还需要后续整理。
+构建 Tauri 桌面产物。
+
+```powershell
+npm run portable:build:gnu
+```
+
+整理便携体验版目录并生成 zip，适合发给其他用户试用。
 
 ## Windows 最小桌面工具链
 
@@ -179,10 +213,11 @@ npm run setup:windows-gnu
 桌面版使用本地 SQLite 数据库：
 
 ```text
-daily-plan-review.db
+data/user.sqlite
+data/demo.sqlite
 ```
 
-这是本地优先应用，目前没有云同步。换电脑或清理系统应用数据前，需要单独考虑数据备份。
+这是本地优先应用，目前没有云同步。便携版数据跟随解压文件夹移动，备份时复制整个便携文件夹，或至少复制 `data/` 文件夹。
 
 ## 常见问题
 

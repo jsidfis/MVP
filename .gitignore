@@ -1,5 +1,6 @@
 .superpowers/
 node_modules/
 dist/
+dist-portable/
 src-tauri/gen/
 src-tauri/target/

@@ -1,0 +1,25 @@
+每日计划与复盘 - 便携体验版
+
+启动方式：
+1. 解压整个文件夹。
+2. 双击“每日计划与复盘.exe”。
+
+数据位置：
+- 我的数据：data/user.sqlite
+- 示例数据：data/demo.sqlite
+
+备份方式：
+- 复制整个文件夹，或至少复制 data 文件夹。
+
+重置方式：
+- 删除 data/user.sqlite 可以重置我的数据。
+- 删除 data/demo.sqlite 可以重置示例数据。
+
+发送给别人体验：
+- 压缩整个文件夹后发送。
+- 不要只发送 exe 文件。
+
+注意：
+- 不建议放在 C:\Program Files 等需要管理员权限的目录。
+- 建议放在桌面、D 盘或普通用户目录。
+- 需要电脑已有 Microsoft Edge WebView2 Runtime。多数 Windows 10/11 已经自带；如果打不开，请先安装 WebView2 Runtime。
