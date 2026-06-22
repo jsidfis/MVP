@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { MonthlyInsights } from '../domain/insightRules';
+import type { Task } from '../domain/types';
 import { MonthlyOverview } from './MonthlyOverview';
 
 describe('MonthlyOverview', () => {
@@ -43,6 +44,21 @@ describe('MonthlyOverview', () => {
     );
 
     expect(screen.getByText('这个月还没有任务记录')).toBeTruthy();
+  });
+
+  it('renders the monthly galaxy map when insight data is available', () => {
+    render(
+      <MonthlyOverview
+        year={2026}
+        month={6}
+        recordedDates={['2026-06-16']}
+        insights={monthlyInsights}
+        tasks={monthlyTasks}
+      />,
+    );
+
+    expect(screen.getByLabelText('月度星系地图')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '2026-06-16 完成 1/1' })).toBeTruthy();
   });
 });
 
@@ -87,3 +103,16 @@ const monthlyInsights: MonthlyInsights = {
   ],
   postponedReasons: [{ tag: 'time_estimate_error', count: 1, withNote: 1 }],
 };
+
+const monthlyTasks: Task[] = [
+  {
+    id: 'task-1',
+    date: '2026-06-16',
+    title: '完成复盘',
+    quadrant: 'important_urgent',
+    status: 'completed',
+    isCarryover: false,
+    createdAt: '2026-06-16T08:00:00.000Z',
+    updatedAt: '2026-06-16T08:00:00.000Z',
+  },
+];

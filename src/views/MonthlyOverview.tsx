@@ -1,11 +1,13 @@
 import type { MonthlyInsights, PostponedReasonInsight, QuadrantInsight } from '../domain/insightRules';
-import type { Quadrant, ReasonTag } from '../domain/types';
+import type { Quadrant, ReasonTag, Task } from '../domain/types';
+import { MonthlyGalaxyMap } from './MonthlyGalaxyMap';
 
 type MonthlyOverviewProps = {
   year: number;
   month: number;
   recordedDates: string[];
   insights?: MonthlyInsights;
+  tasks?: Task[];
   onSelectDate?: (date: string) => void;
 };
 
@@ -26,7 +28,7 @@ const reasonLabels: Record<ReasonTag, string> = {
   no_longer_needed: '不再需要',
 };
 
-export function MonthlyOverview({ year, month, recordedDates, insights, onSelectDate }: MonthlyOverviewProps) {
+export function MonthlyOverview({ year, month, recordedDates, insights, tasks = [], onSelectDate }: MonthlyOverviewProps) {
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const dates = Array.from({ length: days }, (_, index) => {
     const day = String(index + 1).padStart(2, '0');
@@ -39,6 +41,15 @@ export function MonthlyOverview({ year, month, recordedDates, insights, onSelect
     <section className="monthly-overview">
       <h2>月度总览</h2>
       {insights ? <MonthlyInsightSummary insights={insights} /> : null}
+      {insights && insights.totalTasks > 0 ? (
+        <MonthlyGalaxyMap
+          year={year}
+          month={month}
+          days={insights.days}
+          tasks={tasks}
+          onSelectDate={onSelectDate}
+        />
+      ) : null}
       <div className="monthly-grid">
         {dates.map((date) => {
           const recorded = recordedDates.includes(date);
