@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryDailyRepository } from './memoryDailyRepository';
+import type { RecurringTaskRule } from '../domain/recurrenceRules';
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
 import type { TaskTemplate } from './taskTemplates';
 
@@ -70,6 +71,25 @@ describe('MemoryDailyRepository', () => {
     await expect(repository.listTaskTemplates()).resolves.toEqual([
       updatedTemplate,
       taskTemplate('template-2', 'Review routine'),
+    ]);
+  });
+
+  it('saves, lists, and upserts recurring task rules', async () => {
+    const repository = new MemoryDailyRepository();
+    const rule = recurringTaskRule('rule-1', 'daily');
+    const updatedRule = {
+      ...rule,
+      frequency: 'workday' as const,
+      updatedAt: '2026-06-17T10:00:00.000Z',
+    };
+
+    await repository.saveRecurringTaskRule(rule);
+    await repository.saveRecurringTaskRule(recurringTaskRule('rule-2', 'weekly'));
+    await repository.saveRecurringTaskRule(updatedRule);
+
+    await expect(repository.listRecurringTaskRules()).resolves.toEqual([
+      updatedRule,
+      recurringTaskRule('rule-2', 'weekly'),
     ]);
   });
 
@@ -155,6 +175,7 @@ describe('MemoryDailyRepository', () => {
     await expect(repository.listDailyFiles()).resolves.toEqual([]);
     await expect(repository.listAllTasks()).resolves.toEqual([]);
     await expect(repository.listTaskTemplates()).resolves.toEqual([]);
+    await expect(repository.listRecurringTaskRules()).resolves.toEqual([]);
     await expect(repository.listAllSessions()).resolves.toEqual([]);
     await expect(repository.listReviewDecisions()).resolves.toEqual([]);
     await expect(repository.getSettings()).resolves.toEqual({
@@ -346,6 +367,23 @@ function taskTemplate(id: string, name: string): TaskTemplate {
         plannedDurationMinutes: 30,
       },
     ],
+  };
+}
+
+function recurringTaskRule(
+  id: string,
+  frequency: RecurringTaskRule['frequency'],
+): RecurringTaskRule {
+  return {
+    id,
+    title: 'Plan day',
+    quadrant: 'important_urgent',
+    plannedDurationMinutes: 30,
+    frequency,
+    startDate: '2026-06-17',
+    enabled: true,
+    createdAt: '2026-06-17T09:00:00.000Z',
+    updatedAt: '2026-06-17T09:00:00.000Z',
   };
 }
 

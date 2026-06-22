@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MemoryDailyRepository } from './memoryDailyRepository';
 import { exportDailyPlanData, type ExportedDailyPlanData } from './exportData';
 import { importDailyPlanData } from './importData';
+import type { RecurringTaskRule } from '../domain/recurrenceRules';
 import type { DailyFile, ReviewDecision, Task, TaskSession } from '../domain/types';
 import type { TaskTemplate } from './taskTemplates';
 
@@ -31,6 +32,7 @@ describe('importDailyPlanData', () => {
       dailyFiles: [],
       tasks: [],
       taskTemplates: [],
+      recurringTaskRules: [],
       sessions: [],
       reviewDecisions: [],
     });
@@ -47,6 +49,7 @@ describe('importDailyPlanData', () => {
         dailyFiles: [],
         tasks: [],
         taskTemplates: [],
+        recurringTaskRules: [],
         sessions: [],
         reviewDecisions: [],
       }),
@@ -68,6 +71,7 @@ describe('importDailyPlanData', () => {
         dailyFiles: [{ date: '2026-06-23', stage: 'plan', goal: 'This must not be written' }],
         tasks: [{ id: 'bad-task' }],
         taskTemplates: [],
+        recurringTaskRules: [],
         sessions: [],
         reviewDecisions: [],
       }),
@@ -144,6 +148,17 @@ async function seedRepository(repository: MemoryDailyRepository) {
       },
     ],
   };
+  const recurringTaskRule: RecurringTaskRule = {
+    id: 'rule-review',
+    title: 'Weekly review',
+    quadrant: 'important_not_urgent',
+    plannedDurationMinutes: 30,
+    frequency: 'weekly',
+    startDate: '2026-06-22',
+    enabled: true,
+    createdAt: '2026-06-22T08:00:00.000Z',
+    updatedAt: '2026-06-22T08:00:00.000Z',
+  };
 
   await repository.saveSettings({
     homeView: 'galaxy',
@@ -155,6 +170,7 @@ async function seedRepository(repository: MemoryDailyRepository) {
   await repository.saveTask(completedTask);
   await repository.saveTask(postponedTask);
   await repository.saveTaskTemplate(taskTemplate);
+  await repository.saveRecurringTaskRule(recurringTaskRule);
   await repository.saveSession(session);
   await repository.saveReviewDecision(reviewDecision);
 }

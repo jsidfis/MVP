@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryDailyRepository } from './memoryDailyRepository';
 import { exportDailyPlanData } from './exportData';
+import type { RecurringTaskRule } from '../domain/recurrenceRules';
 import type { DailyFile, ReviewDecision, Task, TaskSession } from '../domain/types';
 import type { TaskTemplate } from './taskTemplates';
 
@@ -73,6 +74,17 @@ describe('exportDailyPlanData', () => {
         },
       ],
     };
+    const recurringTaskRule: RecurringTaskRule = {
+      id: 'rule-1',
+      title: '瀹氭湡鍥為【',
+      quadrant: 'important_not_urgent',
+      plannedDurationMinutes: 20,
+      frequency: 'weekly',
+      startDate: '2026-06-22',
+      enabled: true,
+      createdAt: '2026-06-22T08:00:00.000Z',
+      updatedAt: '2026-06-22T08:00:00.000Z',
+    };
 
     await repository.saveSettings({
       homeView: 'galaxy',
@@ -84,6 +96,7 @@ describe('exportDailyPlanData', () => {
     await repository.saveTask(completedTask);
     await repository.saveTask(postponedTask);
     await repository.saveTaskTemplate(taskTemplate);
+    await repository.saveRecurringTaskRule(recurringTaskRule);
     await repository.saveSession(session);
     await repository.saveReviewDecision(reviewDecision);
 
@@ -101,6 +114,7 @@ describe('exportDailyPlanData', () => {
       dailyFiles: [dailyFile],
       tasks: [completedTask, postponedTask],
       taskTemplates: [taskTemplate],
+      recurringTaskRules: [recurringTaskRule],
       sessions: [session],
       reviewDecisions: [reviewDecision],
     });
@@ -121,6 +135,7 @@ describe('exportDailyPlanData', () => {
       dailyFiles: [],
       tasks: [],
       taskTemplates: [],
+      recurringTaskRules: [],
       sessions: [],
       reviewDecisions: [],
     });

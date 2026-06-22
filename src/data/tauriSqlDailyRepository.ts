@@ -1,6 +1,7 @@
 import Database from '@tauri-apps/plugin-sql';
 import { createPortableDatabaseUrl } from './portableDatabase';
 import type { WorkspaceMode } from './workspaceMode';
+import type { RecurrenceFrequency, RecurringTaskRule } from '../domain/recurrenceRules';
 import type {
   DailyFile,
   HomeView,
@@ -40,9 +41,22 @@ interface TaskRow {
   status: TaskStatus;
   is_carryover: number;
   planned_duration_minutes: number | null;
+  recurrence_rule_id: string | null;
   carryover_from_date: string | null;
   postpone_reason_tag: ReasonTag | null;
   postpone_reason_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface RecurringTaskRuleRow {
+  id: string;
+  title: string;
+  quadrant: Quadrant;
+  planned_duration_minutes: number | null;
+  frequency: RecurrenceFrequency;
+  start_date: string;
+  enabled: number;
   created_at: string;
   updated_at: string;
 }
@@ -93,6 +107,7 @@ export async function createTauriSqlDailyRepository(mode: WorkspaceMode): Promis
     await db.execute(statement);
   }
   await ensureColumn(db, 'tasks', 'planned_duration_minutes', 'INTEGER');
+  await ensureColumn(db, 'tasks', 'recurrence_rule_id', 'TEXT');
 
   return createRepository(db);
 }
@@ -179,12 +194,13 @@ function createRepository(db: SqlDatabase): DailyRepository {
           status,
           is_carryover,
           planned_duration_minutes,
+          recurrence_rule_id,
           carryover_from_date,
           postpone_reason_tag,
           postpone_reason_note,
           created_at,
           updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         ON CONFLICT(id) DO UPDATE SET
           date = excluded.date,
           title = excluded.title,
@@ -192,6 +208,7 @@ function createRepository(db: SqlDatabase): DailyRepository {
           status = excluded.status,
           is_carryover = excluded.is_carryover,
           planned_duration_minutes = excluded.planned_duration_minutes,
+          recurrence_rule_id = excluded.recurrence_rule_id,
           carryover_from_date = excluded.carryover_from_date,
           postpone_reason_tag = excluded.postpone_reason_tag,
           postpone_reason_note = excluded.postpone_reason_note,
@@ -204,6 +221,7 @@ function createRepository(db: SqlDatabase): DailyRepository {
           task.status,
           task.isCarryover ? 1 : 0,
           task.plannedDurationMinutes ?? null,
+          task.recurrenceRuleId ?? null,
           task.carryoverFromDate ?? null,
           task.postponeReasonTag ?? null,
           task.postponeReasonNote ?? null,
@@ -246,6 +264,48 @@ function createRepository(db: SqlDatabase): DailyRepository {
           JSON.stringify(template.items),
           template.createdAt,
           template.updatedAt,
+        ],
+      );
+    },
+
+    async listRecurringTaskRules() {
+      const rows = await db.select<RecurringTaskRuleRow[]>(
+        'SELECT * FROM recurring_task_rules ORDER BY created_at ASC',
+      );
+      return rows.map(mapRecurringTaskRule);
+    },
+
+    async saveRecurringTaskRule(rule) {
+      await db.execute(
+        `INSERT INTO recurring_task_rules (
+          id,
+          title,
+          quadrant,
+          planned_duration_minutes,
+          frequency,
+          start_date,
+          enabled,
+          created_at,
+          updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT(id) DO UPDATE SET
+          title = excluded.title,
+          quadrant = excluded.quadrant,
+          planned_duration_minutes = excluded.planned_duration_minutes,
+          frequency = excluded.frequency,
+          start_date = excluded.start_date,
+          enabled = excluded.enabled,
+          updated_at = excluded.updated_at`,
+        [
+          rule.id,
+          rule.title,
+          rule.quadrant,
+          rule.plannedDurationMinutes ?? null,
+          rule.frequency,
+          rule.startDate,
+          rule.enabled ? 1 : 0,
+          rule.createdAt,
+          rule.updatedAt,
         ],
       );
     },
@@ -372,6 +432,7 @@ function createRepository(db: SqlDatabase): DailyRepository {
     async clearAllData() {
       await db.execute('DELETE FROM review_decisions');
       await db.execute('DELETE FROM task_sessions');
+      await db.execute('DELETE FROM recurring_task_rules');
       await db.execute('DELETE FROM task_templates');
       await db.execute('DELETE FROM tasks');
       await db.execute('DELETE FROM daily_files');
@@ -425,12 +486,27 @@ function mapTask(row: TaskRow): Task {
     date: row.date,
     title: row.title,
     quadrant: row.quadrant,
-      status: row.status,
-      isCarryover: toBoolean(row.is_carryover),
-      plannedDurationMinutes: row.planned_duration_minutes ?? undefined,
-      carryoverFromDate: row.carryover_from_date ?? undefined,
+    status: row.status,
+    isCarryover: toBoolean(row.is_carryover),
+    plannedDurationMinutes: row.planned_duration_minutes ?? undefined,
+    recurrenceRuleId: row.recurrence_rule_id ?? undefined,
+    carryoverFromDate: row.carryover_from_date ?? undefined,
     postponeReasonTag: row.postpone_reason_tag ?? undefined,
     postponeReasonNote: row.postpone_reason_note ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapRecurringTaskRule(row: RecurringTaskRuleRow): RecurringTaskRule {
+  return {
+    id: row.id,
+    title: row.title,
+    quadrant: row.quadrant,
+    plannedDurationMinutes: row.planned_duration_minutes ?? undefined,
+    frequency: row.frequency,
+    startDate: row.start_date,
+    enabled: toBoolean(row.enabled),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

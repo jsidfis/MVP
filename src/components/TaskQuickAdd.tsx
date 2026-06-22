@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import type { RecurrenceFrequency } from '../domain/recurrenceRules';
 import type { Quadrant } from '../domain/types';
 
 const quadrantLabels: Record<Quadrant, string> = {
@@ -15,13 +16,25 @@ const quadrants: Quadrant[] = [
   'not_important_not_urgent',
 ];
 
+const recurrenceOptions: Array<{ value: ''; label: string } | { value: RecurrenceFrequency; label: string }> = [
+  { value: '', label: '不重复' },
+  { value: 'daily', label: '每天' },
+  { value: 'workday', label: '工作日' },
+  { value: 'weekly', label: '每周' },
+];
+
 export function TaskQuickAdd({
   onAdd,
 }: {
-  onAdd: (input: { title: string; quadrant: Quadrant }) => Promise<void>;
+  onAdd: (input: {
+    title: string;
+    quadrant: Quadrant;
+    recurrenceFrequency?: RecurrenceFrequency;
+  }) => Promise<void>;
 }) {
   const [title, setTitle] = useState('');
   const [quadrant, setQuadrant] = useState<Quadrant>('important_urgent');
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'' | RecurrenceFrequency>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -34,8 +47,13 @@ export function TaskQuickAdd({
 
     setIsSubmitting(true);
     try {
-      await onAdd({ title: trimmedTitle, quadrant });
+      await onAdd({
+        title: trimmedTitle,
+        quadrant,
+        recurrenceFrequency: recurrenceFrequency || undefined,
+      });
       setTitle('');
+      setRecurrenceFrequency('');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,6 +75,19 @@ export function TaskQuickAdd({
           {quadrants.map((item) => (
             <option key={item} value={item}>
               {quadrantLabels[item]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>重复</span>
+        <select
+          value={recurrenceFrequency}
+          onChange={(event) => setRecurrenceFrequency(event.target.value as '' | RecurrenceFrequency)}
+        >
+          {recurrenceOptions.map((item) => (
+            <option key={item.value || 'none'} value={item.value}>
+              {item.label}
             </option>
           ))}
         </select>

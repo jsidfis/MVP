@@ -76,7 +76,7 @@ export function TaskTemplatePanel({
                   checked={selectedTaskIds.includes(task.id)}
                   onChange={() => toggleTask(task.id)}
                 />
-                <span>{task.title}</span>
+                <span>任务：{task.title}</span>
                 <span className="task-template-panel__meta">{quadrantLabels[task.quadrant]}</span>
                 {task.plannedDurationMinutes ? (
                   <span className="task-template-panel__meta">

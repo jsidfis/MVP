@@ -1,4 +1,5 @@
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
+import type { RecurringTaskRule } from '../domain/recurrenceRules';
 import type { DailyRepository } from './dailyRepository';
 import type { TaskTemplate } from './taskTemplates';
 
@@ -11,6 +12,7 @@ export class MemoryDailyRepository implements DailyRepository {
   private readonly dailyFiles = new Map<string, DailyFile>();
   private readonly tasks = new Map<string, Task>();
   private readonly taskTemplates = new Map<string, TaskTemplate>();
+  private readonly recurringTaskRules = new Map<string, RecurringTaskRule>();
   private readonly sessions = new Map<string, TaskSession>();
   private readonly reviewDecisions = new Map<string, ReviewDecision>();
   private settings?: UserSettings;
@@ -65,6 +67,16 @@ export class MemoryDailyRepository implements DailyRepository {
     this.taskTemplates.set(template.id, cloneTaskTemplate(template));
   }
 
+  async listRecurringTaskRules(): Promise<RecurringTaskRule[]> {
+    return Array.from(this.recurringTaskRules.values())
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .map(cloneRecurringTaskRule);
+  }
+
+  async saveRecurringTaskRule(rule: RecurringTaskRule): Promise<void> {
+    this.recurringTaskRules.set(rule.id, cloneRecurringTaskRule(rule));
+  }
+
   async listSessions(taskId: string): Promise<TaskSession[]> {
     return Array.from(this.sessions.values())
       .filter((session) => session.taskId === taskId)
@@ -109,6 +121,7 @@ export class MemoryDailyRepository implements DailyRepository {
     this.dailyFiles.clear();
     this.tasks.clear();
     this.taskTemplates.clear();
+    this.recurringTaskRules.clear();
     this.sessions.clear();
     this.reviewDecisions.clear();
     this.settings = undefined;
@@ -134,6 +147,10 @@ function cloneTaskTemplate(template: TaskTemplate): TaskTemplate {
     ...template,
     items: template.items.map((item) => ({ ...item })),
   };
+}
+
+function cloneRecurringTaskRule(rule: RecurringTaskRule): RecurringTaskRule {
+  return { ...rule };
 }
 
 function cloneSession(session: TaskSession): TaskSession {

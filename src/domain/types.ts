@@ -33,6 +33,7 @@ export interface Task {
   status: TaskStatus;
   isCarryover: boolean;
   plannedDurationMinutes?: number;
+  recurrenceRuleId?: string;
   carryoverFromDate?: string;
   postponeReasonTag?: ReasonTag;
   postponeReasonNote?: string;

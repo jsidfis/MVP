@@ -32,6 +32,7 @@ describe('createReadableDailyArchive', () => {
       dailyFiles: [{ date: '2026-06-22', stage: 'plan', goal: '' }],
       tasks: [],
       taskTemplates: [],
+      recurringTaskRules: [],
       sessions: [],
       reviewDecisions: [],
     });
@@ -92,6 +93,7 @@ const data: ExportedDailyPlanData = {
     },
   ],
   taskTemplates: [],
+  recurringTaskRules: [],
   sessions: [
     {
       id: 'session-export',

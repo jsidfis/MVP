@@ -11,6 +11,7 @@ import type {
   TaskStatus,
   UserSettings,
 } from '../domain/types';
+import type { RecurrenceFrequency, RecurringTaskRule } from '../domain/recurrenceRules';
 import type { DailyRepository } from './dailyRepository';
 import type { ExportedDailyPlanData } from './exportData';
 import type { TaskTemplate, TaskTemplateItem } from './taskTemplates';
@@ -42,6 +43,7 @@ const REASON_TAGS: readonly ReasonTag[] = [
   'no_longer_needed',
 ];
 const REVIEW_ACTIONS: readonly ReviewDecision['action'][] = ['postpone', 'drop', 'reschedule'];
+const RECURRENCE_FREQUENCIES: readonly RecurrenceFrequency[] = ['daily', 'workday', 'weekly'];
 
 export async function importDailyPlanData(
   repository: DailyRepository,
@@ -61,6 +63,10 @@ export async function importDailyPlanData(
 
   for (const template of data.taskTemplates) {
     await repository.saveTaskTemplate(template);
+  }
+
+  for (const rule of data.recurringTaskRules) {
+    await repository.saveRecurringTaskRule(rule);
   }
 
   for (const session of data.sessions) {
@@ -89,6 +95,10 @@ function readExportedData(value: unknown): ExportedDailyPlanData {
       object.taskTemplates === undefined
         ? []
         : readArray(object.taskTemplates, 'taskTemplates').map(readTaskTemplate),
+    recurringTaskRules:
+      object.recurringTaskRules === undefined
+        ? []
+        : readArray(object.recurringTaskRules, 'recurringTaskRules').map(readRecurringTaskRule),
     sessions: readArray(object.sessions, 'sessions').map(readSession),
     reviewDecisions: readArray(object.reviewDecisions, 'reviewDecisions').map(readReviewDecision),
   };
@@ -147,6 +157,7 @@ function readTask(value: unknown): Task {
       object.plannedDurationMinutes,
       'task.plannedDurationMinutes',
     ),
+    recurrenceRuleId: readOptionalString(object.recurrenceRuleId, 'task.recurrenceRuleId'),
     carryoverFromDate: readOptionalString(object.carryoverFromDate, 'task.carryoverFromDate'),
     postponeReasonTag:
       object.postponeReasonTag === undefined
@@ -180,6 +191,29 @@ function readTaskTemplateItem(value: unknown): TaskTemplateItem {
       object.plannedDurationMinutes,
       'taskTemplate.item.plannedDurationMinutes',
     ),
+  };
+}
+
+function readRecurringTaskRule(value: unknown): RecurringTaskRule {
+  const object = readObject(value, 'recurringTaskRule');
+
+  return {
+    id: readString(object.id, 'recurringTaskRule.id'),
+    title: readString(object.title, 'recurringTaskRule.title'),
+    quadrant: readEnum(object.quadrant, QUADRANTS, 'recurringTaskRule.quadrant'),
+    plannedDurationMinutes: readOptionalNumber(
+      object.plannedDurationMinutes,
+      'recurringTaskRule.plannedDurationMinutes',
+    ),
+    frequency: readEnum(
+      object.frequency,
+      RECURRENCE_FREQUENCIES,
+      'recurringTaskRule.frequency',
+    ),
+    startDate: readString(object.startDate, 'recurringTaskRule.startDate'),
+    enabled: readBoolean(object.enabled, 'recurringTaskRule.enabled'),
+    createdAt: readString(object.createdAt, 'recurringTaskRule.createdAt'),
+    updatedAt: readString(object.updatedAt, 'recurringTaskRule.updatedAt'),
   };
 }
 

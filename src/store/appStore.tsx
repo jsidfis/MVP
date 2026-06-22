@@ -19,6 +19,11 @@ import {
   type TaskTemplate,
 } from '../data/taskTemplates';
 import { calculateMonthlyInsights, type MonthlyInsights } from '../domain/insightRules';
+import {
+  generateRecurringTasks,
+  type RecurrenceFrequency,
+  type RecurringTaskRule,
+} from '../domain/recurrenceRules';
 import { buildTask, confirmCarryoverTask } from '../domain/taskRules';
 import { completeSession, createSession } from '../domain/timeRules';
 import type { DailyFile, Quadrant, Task, TaskSession, UserSettings } from '../domain/types';
@@ -29,13 +34,14 @@ export interface AppState {
   settings?: UserSettings;
   tasks: Task[];
   taskTemplates: TaskTemplate[];
+  recurringTaskRules: RecurringTaskRule[];
   carryoverCandidates: Task[];
   monthlyOverview?: MonthlyOverviewState;
   isLoading: boolean;
 }
 
 interface AppActions {
-  addTask(input: { title: string; quadrant: Quadrant }): Promise<void>;
+  addTask(input: { title: string; quadrant: Quadrant; recurrenceFrequency?: RecurrenceFrequency }): Promise<void>;
   saveTaskTemplate(input: { name: string; taskIds: string[] }): Promise<void>;
   applyTaskTemplate(templateId: string): Promise<void>;
   startTask(taskId: string, oldTaskMode?: OldTaskMode): Promise<void>;
@@ -71,6 +77,7 @@ type Action =
       settings: UserSettings;
       tasks: Task[];
       taskTemplates: TaskTemplate[];
+      recurringTaskRules: RecurringTaskRule[];
       carryoverCandidates: Task[];
     }
   | {
@@ -79,11 +86,13 @@ type Action =
       settings: UserSettings;
       tasks: Task[];
       taskTemplates: TaskTemplate[];
+      recurringTaskRules: RecurringTaskRule[];
       carryoverCandidates: Task[];
     }
   | { type: 'upsertTask'; task: Task }
   | { type: 'upsertTasks'; tasks: Task[] }
   | { type: 'upsertTaskTemplate'; template: TaskTemplate }
+  | { type: 'upsertRecurringTaskRule'; rule: RecurringTaskRule }
   | { type: 'confirmedCarryover'; task: Task; candidateId: string }
   | { type: 'hiddenCarryoverCandidate'; taskId: string }
   | { type: 'settingsUpdated'; settings: UserSettings }
@@ -109,9 +118,17 @@ export function AppStoreProvider({
     dispatch({ type: 'loading', today });
 
     loadRepositoryState(repository, today).then(
-      ({ dailyFile, settings, tasks, taskTemplates, carryoverCandidates }) => {
+      ({ dailyFile, settings, tasks, taskTemplates, recurringTaskRules, carryoverCandidates }) => {
         if (!cancelled) {
-          dispatch({ type: 'loaded', dailyFile, settings, tasks, taskTemplates, carryoverCandidates });
+          dispatch({
+            type: 'loaded',
+            dailyFile,
+            settings,
+            tasks,
+            taskTemplates,
+            recurringTaskRules,
+            carryoverCandidates,
+          });
         }
       },
     );
@@ -122,12 +139,35 @@ export function AppStoreProvider({
   }, [repository, today]);
 
   const addTask = useCallback(
-    async (input: { title: string; quadrant: Quadrant }) => {
+    async (input: { title: string; quadrant: Quadrant; recurrenceFrequency?: RecurrenceFrequency }) => {
       const now = new Date().toISOString();
-      const task = buildTask({ ...input, now, date: state.today });
+      const recurrenceRuleId = input.recurrenceFrequency ? crypto.randomUUID() : undefined;
+      const task = {
+        ...buildTask({ title: input.title, quadrant: input.quadrant, now, date: state.today }),
+        recurrenceRuleId,
+      };
+      const recurringTaskRule: RecurringTaskRule | undefined = input.recurrenceFrequency
+        ? {
+            id: recurrenceRuleId!,
+            title: task.title,
+            quadrant: task.quadrant,
+            plannedDurationMinutes: task.plannedDurationMinutes,
+            frequency: input.recurrenceFrequency,
+            startDate: state.today,
+            enabled: true,
+            createdAt: now,
+            updatedAt: now,
+          }
+        : undefined;
 
+      if (recurringTaskRule) {
+        await repository.saveRecurringTaskRule(recurringTaskRule);
+      }
       await repository.saveTask(task);
       dispatch({ type: 'upsertTask', task });
+      if (recurringTaskRule) {
+        dispatch({ type: 'upsertRecurringTaskRule', rule: recurringTaskRule });
+      }
     },
     [repository, state.today],
   );
@@ -398,6 +438,7 @@ function initialState(today: string): AppState {
     today,
     tasks: [],
     taskTemplates: [],
+    recurringTaskRules: [],
     carryoverCandidates: [],
     isLoading: true,
   };
@@ -417,6 +458,7 @@ function reducer(state: AppState, action: Action): AppState {
         settings: state.settings ?? action.settings,
         tasks,
         taskTemplates,
+        recurringTaskRules: action.recurringTaskRules,
         carryoverCandidates: action.carryoverCandidates.filter(
           (candidate) => !tasks.some((task) => task.id === candidate.id),
         ),
@@ -430,6 +472,7 @@ function reducer(state: AppState, action: Action): AppState {
         settings: action.settings,
         tasks: action.tasks,
         taskTemplates: action.taskTemplates,
+        recurringTaskRules: action.recurringTaskRules,
         carryoverCandidates: action.carryoverCandidates,
         isLoading: false,
       };
@@ -439,6 +482,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, tasks: action.tasks.reduce(upsertTask, state.tasks) };
     case 'upsertTaskTemplate':
       return { ...state, taskTemplates: upsertTaskTemplate(state.taskTemplates, action.template) };
+    case 'upsertRecurringTaskRule':
+      return { ...state, recurringTaskRules: upsertRecurringTaskRule(state.recurringTaskRules, action.rule) };
     case 'confirmedCarryover':
       return {
         ...state,
@@ -458,15 +503,32 @@ function reducer(state: AppState, action: Action): AppState {
 }
 
 async function loadRepositoryState(repository: DailyRepository, today: string) {
-  const [dailyFile, settings, tasks, taskTemplates, carryoverCandidates] = await Promise.all([
+  const [dailyFile, settings, tasks, taskTemplates, recurringTaskRules, carryoverCandidates] = await Promise.all([
     repository.getDailyFile(today),
     repository.getSettings(),
     repository.listTasks(today),
     repository.listTaskTemplates(),
+    repository.listRecurringTaskRules(),
     repository.listCarryoverCandidates(today),
   ]);
+  const generatedTasks = generateRecurringTasks({
+    rules: recurringTaskRules,
+    existingTasks: tasks,
+    date: today,
+    now: new Date().toISOString(),
+    idFactory: () => crypto.randomUUID(),
+  });
 
-  return { dailyFile, settings, tasks, taskTemplates, carryoverCandidates };
+  await Promise.all(generatedTasks.map((task) => repository.saveTask(task)));
+
+  return {
+    dailyFile,
+    settings,
+    tasks: [...tasks, ...generatedTasks],
+    taskTemplates,
+    recurringTaskRules,
+    carryoverCandidates,
+  };
 }
 
 function upsertTask(tasks: Task[], task: Task): Task[] {
@@ -481,6 +543,13 @@ function mergeLoadedTasks(loadedTasks: Task[], currentTasks: Task[]): Task[] {
 
 function upsertTaskTemplate(templates: TaskTemplate[], template: TaskTemplate): TaskTemplate[] {
   return [...templates.filter((item) => item.id !== template.id), template];
+}
+
+function upsertRecurringTaskRule(
+  rules: RecurringTaskRule[],
+  rule: RecurringTaskRule,
+): RecurringTaskRule[] {
+  return [...rules.filter((item) => item.id !== rule.id), rule];
 }
 
 function mergeLoadedTaskTemplates(

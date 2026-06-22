@@ -19,6 +19,7 @@ export const SCHEMA_STATEMENTS = [
     status TEXT NOT NULL,
     is_carryover INTEGER NOT NULL,
     planned_duration_minutes INTEGER,
+    recurrence_rule_id TEXT,
     carryover_from_date TEXT,
     postpone_reason_tag TEXT,
     postpone_reason_note TEXT,
@@ -29,6 +30,17 @@ export const SCHEMA_STATEMENTS = [
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     items_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS recurring_task_rules (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    quadrant TEXT NOT NULL,
+    planned_duration_minutes INTEGER,
+    frequency TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    enabled INTEGER NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,

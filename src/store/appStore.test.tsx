@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryDailyRepository } from '../data/memoryDailyRepository';
 import type { DailyRepository } from '../data/dailyRepository';
 import type { TaskTemplate } from '../data/taskTemplates';
+import type { RecurringTaskRule } from '../domain/recurrenceRules';
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
 import { AppStoreProvider, useAppStore } from './appStore';
 
@@ -237,6 +238,7 @@ const importedBackup = {
     },
   ],
   taskTemplates: [],
+  recurringTaskRules: [],
   sessions: [],
   reviewDecisions: [],
 };
@@ -330,6 +332,13 @@ class DelayedLoadRepository implements DailyRepository {
   }
 
   async saveTaskTemplate(): Promise<void> {}
+
+  async listRecurringTaskRules(): Promise<RecurringTaskRule[]> {
+    await this.initialLoad.promise;
+    return [];
+  }
+
+  async saveRecurringTaskRule(): Promise<void> {}
 
   async listSessions(): Promise<TaskSession[]> {
     return [];

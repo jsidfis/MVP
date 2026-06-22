@@ -1,4 +1,5 @@
 import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
+import type { RecurringTaskRule } from '../domain/recurrenceRules';
 import type { TaskTemplate } from './taskTemplates';
 
 export interface DailyRepository {
@@ -10,6 +11,8 @@ export interface DailyRepository {
   listAllTasks(): Promise<Task[]>;
   listTaskTemplates(): Promise<TaskTemplate[]>;
   saveTaskTemplate(template: TaskTemplate): Promise<void>;
+  listRecurringTaskRules(): Promise<RecurringTaskRule[]>;
+  saveRecurringTaskRule(rule: RecurringTaskRule): Promise<void>;
   listSessions(taskId: string): Promise<TaskSession[]>;
   saveSession(session: TaskSession): Promise<void>;
   listAllSessions(): Promise<TaskSession[]>;
