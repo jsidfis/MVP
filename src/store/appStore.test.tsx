@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryDailyRepository } from '../data/memoryDailyRepository';
 import type { DailyRepository } from '../data/dailyRepository';
-import type { DailyFile, Task, TaskSession, UserSettings } from '../domain/types';
+import type { DailyFile, ReviewDecision, Task, TaskSession, UserSettings } from '../domain/types';
 import { AppStoreProvider, useAppStore } from './appStore';
 
 const today = '2026-06-18';
@@ -232,6 +232,11 @@ class DelayedLoadRepository implements DailyRepository {
     Object.assign(this.dailyFile, file);
   }
 
+  async listDailyFiles(): Promise<DailyFile[]> {
+    await this.initialLoad.promise;
+    return [{ ...this.dailyFile }];
+  }
+
   async listTasks(date: string): Promise<Task[]> {
     const snapshot = Array.from(this.tasks.values())
       .filter((item) => item.date === date)
@@ -245,13 +250,28 @@ class DelayedLoadRepository implements DailyRepository {
     this.tasks.set(item.id, { ...item });
   }
 
+  async listAllTasks(): Promise<Task[]> {
+    const snapshot = Array.from(this.tasks.values()).map((item) => ({ ...item }));
+
+    await this.initialLoad.promise;
+    return snapshot;
+  }
+
   async listSessions(): Promise<TaskSession[]> {
     return [];
   }
 
   async saveSession(): Promise<void> {}
 
+  async listAllSessions(): Promise<TaskSession[]> {
+    return [];
+  }
+
   async saveReviewDecision(): Promise<void> {}
+
+  async listReviewDecisions(): Promise<ReviewDecision[]> {
+    return [];
+  }
 
   async listCarryoverCandidates(date: string): Promise<Task[]> {
     const snapshot = Array.from(this.tasks.values())

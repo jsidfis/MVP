@@ -28,6 +28,12 @@ export class MemoryDailyRepository implements DailyRepository {
     this.dailyFiles.set(file.date, cloneDailyFile(file));
   }
 
+  async listDailyFiles(): Promise<DailyFile[]> {
+    return Array.from(this.dailyFiles.values())
+      .sort((left, right) => left.date.localeCompare(right.date))
+      .map(cloneDailyFile);
+  }
+
   async listTasks(date: string): Promise<Task[]> {
     return Array.from(this.tasks.values())
       .filter((task) => task.date === date)
@@ -36,6 +42,15 @@ export class MemoryDailyRepository implements DailyRepository {
 
   async saveTask(task: Task): Promise<void> {
     this.tasks.set(task.id, cloneTask(task));
+  }
+
+  async listAllTasks(): Promise<Task[]> {
+    return Array.from(this.tasks.values())
+      .sort(
+        (left, right) =>
+          left.date.localeCompare(right.date) || left.createdAt.localeCompare(right.createdAt),
+      )
+      .map(cloneTask);
   }
 
   async listSessions(taskId: string): Promise<TaskSession[]> {
@@ -48,8 +63,20 @@ export class MemoryDailyRepository implements DailyRepository {
     this.sessions.set(session.id, cloneSession(session));
   }
 
+  async listAllSessions(): Promise<TaskSession[]> {
+    return Array.from(this.sessions.values())
+      .sort((left, right) => left.startedAt.localeCompare(right.startedAt))
+      .map(cloneSession);
+  }
+
   async saveReviewDecision(decision: ReviewDecision): Promise<void> {
     this.reviewDecisions.set(decision.id, cloneReviewDecision(decision));
+  }
+
+  async listReviewDecisions(): Promise<ReviewDecision[]> {
+    return Array.from(this.reviewDecisions.values())
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .map(cloneReviewDecision);
   }
 
   async listCarryoverCandidates(today: string): Promise<Task[]> {

@@ -54,6 +54,16 @@ interface TaskSessionRow {
   duration_minutes: number | null;
 }
 
+interface ReviewDecisionRow {
+  id: string;
+  task_id: string;
+  action: ReviewDecision['action'];
+  target_date: string | null;
+  reason_tag: ReasonTag;
+  reason_note: string | null;
+  created_at: string;
+}
+
 interface UserSettingsRow {
   home_view: HomeView;
   morning_reminder: string | null;
@@ -135,6 +145,11 @@ function createRepository(db: SqlDatabase): DailyRepository {
 
     saveDailyFile,
 
+    async listDailyFiles() {
+      const rows = await db.select<DailyFileRow[]>('SELECT * FROM daily_files ORDER BY date ASC');
+      return rows.map(mapDailyFile);
+    },
+
     async listTasks(date) {
       const rows = await db.select<TaskRow[]>(
         'SELECT * FROM tasks WHERE date = $1 ORDER BY created_at ASC',
@@ -184,6 +199,13 @@ function createRepository(db: SqlDatabase): DailyRepository {
       );
     },
 
+    async listAllTasks() {
+      const rows = await db.select<TaskRow[]>(
+        'SELECT * FROM tasks ORDER BY date ASC, created_at ASC',
+      );
+      return rows.map(mapTask);
+    },
+
     async listSessions(taskId) {
       const rows = await db.select<TaskSessionRow[]>(
         'SELECT * FROM task_sessions WHERE task_id = $1',
@@ -219,6 +241,13 @@ function createRepository(db: SqlDatabase): DailyRepository {
       );
     },
 
+    async listAllSessions() {
+      const rows = await db.select<TaskSessionRow[]>(
+        'SELECT * FROM task_sessions ORDER BY started_at ASC',
+      );
+      return rows.map(mapSession);
+    },
+
     async saveReviewDecision(decision) {
       await db.execute(
         `INSERT INTO review_decisions (
@@ -246,6 +275,13 @@ function createRepository(db: SqlDatabase): DailyRepository {
           decision.createdAt,
         ],
       );
+    },
+
+    async listReviewDecisions() {
+      const rows = await db.select<ReviewDecisionRow[]>(
+        'SELECT * FROM review_decisions ORDER BY created_at ASC',
+      );
+      return rows.map(mapReviewDecision);
     },
 
     async listCarryoverCandidates(today) {
@@ -288,6 +324,18 @@ function createRepository(db: SqlDatabase): DailyRepository {
         ],
       );
     },
+  };
+}
+
+function mapReviewDecision(row: ReviewDecisionRow): ReviewDecision {
+  return {
+    id: row.id,
+    taskId: row.task_id,
+    action: row.action,
+    targetDate: row.target_date ?? undefined,
+    reasonTag: row.reason_tag,
+    reasonNote: row.reason_note ?? undefined,
+    createdAt: row.created_at,
   };
 }
 
