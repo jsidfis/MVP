@@ -38,6 +38,7 @@
 ## 项目文档
 
 - `docs/PROJECT_PHASE_2_PORTABLE_PREVIEW.md`：二阶段便携体验版方案。
+- `docs/PROJECT_PHASE_3_DATA_SAFETY.md`：三阶段数据安全和可恢复性方案。
 - `docs/PROJECT_FUTURE_ROADMAP.md`：后续阶段总方案、能力边界、测试边界。
 - `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md`：后续阶段详细任务计划。
 - `docs/superpowers/specs/2026-06-16-daily-plan-review-design.md`：初始产品设计说明。
