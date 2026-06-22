@@ -6,14 +6,28 @@
 
 本阶段不改变核心流程：早上计划、白天执行、晚上复盘。新增能力只用于降低重复操作，不把应用扩展成完整项目管理器或日历系统。
 
+## 当前实现状态
+
+已完成：
+
+- 本地任务模板：保存选中任务为模板，并手动应用到今天。
+- 简单重复任务：新增任务时可选择每天、工作日或每周重复；打开某一天时生成应出现的任务。
+- 本地搜索和筛选：读取本地仓库任务，按关键词、日期范围、四象限、状态和顺延原因筛选。
+- JSON 备份已包含任务模板和重复任务规则。
+
+未在本轮实现，保留到后续小步：
+
+- 计划耗时和实际耗时的差异展示。
+- 重复任务规则的独立管理和关闭入口。
+- 复盘草稿保护。
+
 ## 本阶段包含
 
 - 常用任务模板：用户可以把一组任务保存为模板，并在需要时手动应用到今天。
 - 轻量重复任务：支持每天、工作日和每周三类简单规则。
 - 本地搜索和筛选：按标题、日期范围、四象限、任务状态和顺延原因查找历史任务。
-- 计划耗时和实际耗时对比的基础口径。
+- 为计划耗时和实际耗时对比保留基础数据口径。
 - 常用操作的更少点击入口。
-- 复盘草稿保护的最小能力，避免误关闭导致输入丢失。
 
 ## 本阶段不包含
 
@@ -73,7 +87,9 @@
 
 计划耗时是用户给任务的预估分钟数。实际耗时来自任务执行会话和手动修正。
 
-本阶段只展示差异，不给效率分数，不做人格化评价。
+目标口径只展示差异，不给效率分数，不做人格化评价。
+
+当前代码只保留 `plannedDurationMinutes` 字段并在模板、重复任务中传递；差异展示 UI 未在本轮实现。
 
 ## UI 原则
 
@@ -111,7 +127,22 @@
 ## 验收标准
 
 - 模板不会自动污染今天任务，必须由用户明确添加。
-- 重复任务生成规则简单、可解释、可关闭。
+- 重复任务生成规则简单、可解释；独立关闭入口留到后续。
 - 搜索仅使用本地数据。
 - 没有新增账号、云同步、团队协作或外部服务依赖。
 - README 和本方案对能力边界的描述一致。
+
+## 自动验证记录
+
+2026-06-22 已通过：
+
+```powershell
+npm.cmd run test:run -- src/data/taskTemplates.test.ts src/views/TaskTemplatePanel.test.tsx src/data/memoryDailyRepository.test.ts src/data/exportData.test.ts src/data/importData.test.ts src/data/readableExport.test.ts src/store/appStore.test.tsx src/store/appStore.taskTemplates.test.tsx src/views/DailyWorkspace.taskTemplates.test.tsx
+npm.cmd run test:run -- src/domain/recurrenceRules.test.ts src/components/TaskQuickAdd.test.tsx src/data/memoryDailyRepository.test.ts src/data/exportData.test.ts src/data/importData.test.ts src/data/readableExport.test.ts src/store/appStore.test.tsx src/store/appStore.recurrence.test.tsx src/views/DailyWorkspace.test.tsx
+npm.cmd run test:run -- src/domain/searchRules.test.ts src/views/SearchPanel.test.tsx src/store/appStore.search.test.tsx src/store/appStore.test.tsx src/views/DailyWorkspace.test.tsx
+npm.cmd run test:run
+npm.cmd run build
+npm.cmd run tauri:check:gnu
+npm.cmd run portable:build:gnu
+git diff --check
+```
