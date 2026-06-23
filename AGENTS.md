@@ -16,9 +16,9 @@
 
 当前版本：`0.2.0`，MVP 便携体验版。
 
-当前进度：Phase 3 数据安全主要能力已接入，Phase 4 复盘洞察和月度体验已完成自动验证与便携包 smoke，Phase 5 日常工作流增强已完成代码实现和自动验证。下一阶段优先推进 Phase 6 开源发布准备。
+当前进度：Phase 3 数据安全主要能力已接入，Phase 4 复盘洞察和月度体验已完成自动验证与便携包 smoke，Phase 5 日常工作流增强已完成代码实现和自动验证，Phase 6 开源发布准备已补充仓库文档、Issue 模板、CI 和 Release 草案。下一阶段优先完成人工 GitHub Release，然后再评估 Phase 7。
 
-当前重点：个人长期稳定使用、数据可备份、可发给别人体验，并继续降低每天重复输入成本。不要提前做账号、云同步或团队协作。
+当前重点：个人长期稳定使用、数据可备份、可发给别人体验，并让外部用户能够理解、运行和反馈。不要提前做账号、云同步或团队协作。
 
 ## 接手时先读
 
@@ -28,11 +28,15 @@
 2. `docs/PROJECT_PHASE_2_PORTABLE_PREVIEW.md`：当前便携体验版方案。
 3. `docs/PROJECT_PHASE_3_DATA_SAFETY.md`：三阶段数据安全和可恢复性方案。
 4. `docs/PROJECT_PHASE_4_INSIGHTS.md`：四阶段复盘洞察和月度体验方案与验收记录。
-5. `docs/PROJECT_PHASE_5_WORKFLOW.md`：五阶段日常工作流增强方案，当前下一阶段入口。
-6. `docs/PROJECT_FUTURE_ROADMAP.md`：后续阶段总方案、能力边界、测试边界。
-7. `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md`：后续详细实施计划。
-8. `docs/superpowers/specs/2026-06-16-daily-plan-review-design.md`：初始产品设计。
-9. `docs/superpowers/plans/2026-06-21-portable-preview-implementation.md`：二阶段便携版实施历史。
+5. `docs/PROJECT_PHASE_5_WORKFLOW.md`：五阶段日常工作流增强方案。
+6. `docs/PROJECT_PHASE_6_OPEN_SOURCE.md`：六阶段开源发布和协作准备方案。
+7. `docs/RELEASE_DRAFT_v0.2.0.md`：GitHub Release 草案。
+8. `CONTRIBUTING.md`：外部反馈、贡献、测试和隐私边界说明。
+9. `CHANGELOG.md`：版本变化记录。
+10. `docs/PROJECT_FUTURE_ROADMAP.md`：后续阶段总方案、能力边界、测试边界。
+11. `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md`：后续详细实施计划。
+12. `docs/superpowers/specs/2026-06-16-daily-plan-review-design.md`：初始产品设计。
+13. `docs/superpowers/plans/2026-06-21-portable-preview-implementation.md`：二阶段便携版实施历史。
 
 如果这些文档和代码出现冲突，以当前代码和最新用户需求为准，但要同步修正文档。
 
@@ -54,6 +58,7 @@
 - 本地任务模板：手动保存选中任务为模板，并手动应用到今天。
 - 简单重复任务：支持每天、工作日、每周同一天，打开某一天时生成，不在后台运行。
 - 本地搜索和筛选：按关键词、日期范围、四象限、状态和顺延原因筛选本地历史任务。
+- 开源发布准备：MIT License、CONTRIBUTING、CHANGELOG、Issue Forms、GitHub Actions CI、Release 草案。
 - 便携 zip 打包。
 
 暂不实现：
@@ -67,6 +72,9 @@
 - 复杂模板系统、模板市场、模板分享或复杂分类。
 - 复杂重复规则，例如节假日、调休、RRULE 或每月第几个工作日。
 - 重复任务规则的独立管理和关闭入口。
+- 自动更新。
+- 跨平台二进制发布承诺。
+- 立即维护外部 PR 的承诺。
 - 企业级权限。
 
 ## 代码结构
@@ -87,6 +95,9 @@
 - `scripts/windows-gnu.ps1`：Windows GNU 工具链安装、检查、开发、构建入口。
 - `scripts/portable-release.ps1`：生成便携 zip。
 - `docs/`：产品方案、任务计划、快速开始说明。
+- `.github/ISSUE_TEMPLATE/`：GitHub 外部反馈模板。
+- `.github/workflows/ci.yml`：GitHub Actions 基础检查。
+- `CONTRIBUTING.md`、`CHANGELOG.md`、`LICENSE`：开源发布和协作入口。
 
 ## 数据模型和存储
 
@@ -261,10 +272,10 @@ https://github.com/jsidfis/MVP.git
 
 按 `docs/PROJECT_FUTURE_ROADMAP.md` 推进：
 
-1. Phase 6：开源发布和协作准备。
+1. Phase 6 收尾：在 GitHub 创建正式 Release，上传便携 zip，必要时补不含私人数据的截图。
 2. Phase 7：小团队可能性验证。
 
-Phase 3、Phase 4 和 Phase 5 已有主要实现与阶段文档。正式发布前仍建议按对应阶段文档再走一遍手动 smoke，尤其是 JSON 恢复流程、月度总览空数据/部分数据场景、模板/重复/搜索流程和便携包启动检查。
+Phase 3、Phase 4、Phase 5 和 Phase 6 已有主要实现与阶段文档。正式发布前仍建议按对应阶段文档再走一遍手动 smoke，尤其是 JSON 恢复流程、月度总览空数据/部分数据场景、模板/重复/搜索流程、便携包启动检查和 Release 文案。
 
 不要跳过 Phase 6 的开源发布准备直接做团队或云同步。这个项目的核心信任基础仍是本地数据安全、可恢复和个人日常使用稳定性。
 

@@ -1,0 +1,52 @@
+name: 功能建议
+description: 提出一个符合本地优先边界的改进建议
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        当前项目优先个人本地使用。账号、云同步、团队协作、复杂权限需要先写独立方案。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你遇到的真实问题
+      description: 请描述当前流程哪里不够，而不是只描述一个按钮或页面。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你希望的使用方式
+      description: 描述理想流程，例如早上计划、白天执行、晚上复盘中的哪一步会改变。
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 影响区域
+      options:
+        - 今日计划
+        - 任务执行
+        - 晚间复盘
+        - 月度总览
+        - 数据备份和迁移
+        - 便携包和发布
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: local-first
+    attributes:
+      label: 本地优先影响
+      description: 这个建议是否需要联网、账号、云同步或团队协作？如果需要，请说明原因。
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: 边界确认
+      options:
+        - label: 我理解当前版本不承诺账号、云同步、团队协作或自动更新。
+          required: true

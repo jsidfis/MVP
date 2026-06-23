@@ -1,0 +1,44 @@
+name: 体验反馈
+description: 反馈日常使用中的顺手或卡顿点
+title: "[Feedback]: "
+labels:
+  - feedback
+body:
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 反馈发生在哪个阶段
+      options:
+        - 早上计划
+        - 白天执行
+        - 中途新增任务
+        - 晚上复盘
+        - 月度回顾
+        - 数据备份或迁移
+        - 第一次安装或启动
+    validations:
+      required: true
+  - type: textarea
+    id: useful
+    attributes:
+      label: 哪些地方有帮助
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: 哪些地方有阻力
+      description: 请尽量描述实际操作过程。
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 你希望如何变化
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我确认没有上传私人任务记录、SQLite 数据库、token、密钥或高敏感信息。
+          required: true

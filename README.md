@@ -1,8 +1,10 @@
 # 每日计划与复盘
 
+![CI](https://github.com/jsidfis/MVP/actions/workflows/ci.yml/badge.svg)
+
 一个本地优先的个人桌面应用，用于早上计划、白天执行、晚上复盘。
 
-当前状态是 MVP 便携体验版：可以本地运行核心流程，也可以生成 zip 发给其他用户试用。Phase 5 已加入本地任务模板、简单重复任务和本地搜索，用于减少每天重复输入。
+当前状态是 MVP 便携体验版：可以本地运行核心流程，也可以生成 zip 发给其他用户试用。Phase 6 已补充开源发布准备，包括许可证、贡献说明、变更日志、Issue 模板、CI 和 Release 草案。
 
 ## 功能范围
 
@@ -32,6 +34,8 @@
 - 正式安装包
 - 复杂月度动画和绩效化统计
 - 复杂日历规则，例如节假日、调休、每月第几个工作日
+- 自动更新
+- 跨平台二进制发布
 
 ## 技术栈
 
@@ -46,9 +50,20 @@
 - `docs/PROJECT_PHASE_3_DATA_SAFETY.md`：三阶段数据安全和可恢复性方案。
 - `docs/PROJECT_PHASE_4_INSIGHTS.md`：四阶段复盘洞察和月度体验方案。
 - `docs/PROJECT_PHASE_5_WORKFLOW.md`：五阶段日常工作流增强方案。
+- `docs/PROJECT_PHASE_6_OPEN_SOURCE.md`：六阶段开源发布和协作准备方案。
+- `docs/RELEASE_DRAFT_v0.2.0.md`：GitHub Release 草案。
 - `docs/PROJECT_FUTURE_ROADMAP.md`：后续阶段总方案、能力边界、测试边界。
 - `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md`：后续阶段详细任务计划。
+- `docs/superpowers/plans/2026-06-23-open-source-release-prep.md`：Phase 6 详细实施计划。
 - `docs/superpowers/specs/2026-06-16-daily-plan-review-design.md`：初始产品设计说明。
+
+开源协作相关文件：
+
+- `LICENSE`：MIT 开源协议。
+- `CONTRIBUTING.md`：反馈、开发、测试和隐私边界说明。
+- `CHANGELOG.md`：版本变化记录。
+- `.github/ISSUE_TEMPLATE/`：Bug、功能建议和体验反馈模板。
+- `.github/workflows/ci.yml`：基础 CI 检查。
 
 ## 月度总览
 
@@ -166,6 +181,16 @@ dist-portable/每日计划与复盘-v0.2.0-portable.zip
 - 日常备份：复制整个便携文件夹，或至少复制 `data/` 文件夹。
 - 发给别人体验：发送 `dist-portable/每日计划与复盘-v0.2.0-portable.zip`，不要发送你自己已经使用过的便携文件夹。
 - 迁移到新电脑或 D 盘：复制整个便携文件夹最稳妥；如果只迁移数据，至少保留 `data/user.sqlite`。
+
+## 反馈和贡献
+
+如果你只是体验应用，优先使用 GitHub issue 模板反馈：
+
+- Bug：提供 Windows 版本、应用版本、运行方式、复现步骤、预期结果和实际结果。
+- 功能建议：说明真实使用场景，以及为什么当前流程不够。
+- 体验反馈：说明早上计划、白天执行、晚上复盘或月度回顾中哪里顺手、哪里卡顿。
+
+不要上传 SQLite 数据库、私人任务记录、token、密钥或包含私人内容的截图。更完整的协作说明见 `CONTRIBUTING.md`。
 
 ## 常用命令
 
@@ -343,4 +368,18 @@ D:\Projects\daily-plan-review
 npm run test:run
 npm run build
 npm run tauri:check:gnu
+```
+
+GitHub Actions 会在 Windows 上运行：
+
+```powershell
+npm ci
+npm run test:run
+npm run build
+```
+
+并在 `src-tauri` 中运行：
+
+```powershell
+cargo check --locked
 ```

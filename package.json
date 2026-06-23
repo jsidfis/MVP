@@ -2,6 +2,15 @@
   "name": "daily-plan-review",
   "private": true,
   "version": "0.2.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jsidfis/MVP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jsidfis/MVP/issues"
+  },
+  "homepage": "https://github.com/jsidfis/MVP#readme",
   "type": "module",
   "scripts": {
     "dev": "vite",
