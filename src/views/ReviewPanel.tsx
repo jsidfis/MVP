@@ -4,12 +4,14 @@ import type { DailyReview, ReasonTag, ReviewDecision, Task } from '../domain/typ
 
 type ReviewPanelProps = {
   tasks: Task[];
-  onSubmit(input: {
-    decisions: Array<
-      Pick<ReviewDecision, 'taskId' | 'action' | 'reasonTag' | 'reasonNote' | 'targetDate'>
-    >;
-    review: DailyReview;
-  }): void;
+  onSubmit(input: ReviewSubmitInput): void;
+};
+
+export type ReviewSubmitInput = {
+  decisions: Array<
+    Pick<ReviewDecision, 'taskId' | 'action' | 'reasonTag' | 'reasonNote' | 'targetDate'>
+  >;
+  review: DailyReview;
 };
 
 type ReviewAction = ReviewDecision['action'];
@@ -24,6 +26,21 @@ const defaultDecision: DecisionDraft = {
   reasonTag: 'time_estimate_error',
 };
 
+const reviewQuestions: Array<{
+  key: keyof DailyReview;
+  label: string;
+  placeholder: string;
+}> = [
+  { key: 'completedText', label: '今天完成了什么', placeholder: '记录今天已经推进的内容' },
+  {
+    key: 'unfinishedText',
+    label: '未完成的原因是什么',
+    placeholder: '补充整体原因，任务原因会单独保存',
+  },
+  { key: 'feelingText', label: '今天状态或感受如何', placeholder: '用一句话记录今天的状态' },
+  { key: 'tomorrowFocusText', label: '明天的重点是什么', placeholder: '写下明天最希望推进的事' },
+];
+
 export function ReviewPanel({ tasks, onSubmit }: ReviewPanelProps) {
   const unfinished = tasks.filter((task) => task.status !== 'completed' && task.status !== 'dropped');
   const [review, setReview] = useState<DailyReview>({
@@ -35,6 +52,9 @@ export function ReviewPanel({ tasks, onSubmit }: ReviewPanelProps) {
   const [decisions, setDecisions] = useState<Record<string, DecisionDraft>>(
     Object.fromEntries(unfinished.map((task) => [task.id, defaultDecision])),
   );
+  const [isReviewingQuestions, setIsReviewingQuestions] = useState(unfinished.length === 0);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const currentQuestion = reviewQuestions[questionIndex];
 
   function updateDecision(taskId: string, patch: Partial<DecisionDraft>) {
     setDecisions((current) => ({
@@ -66,9 +86,24 @@ export function ReviewPanel({ tasks, onSubmit }: ReviewPanelProps) {
 
   return (
     <form className="review-panel" onSubmit={submit}>
-      <h2>晚间复盘</h2>
-      {unfinished.length > 0 ? (
-        <div className="review-panel__tasks">
+      <div className="review-panel__heading">
+        <div>
+          <p>{isReviewingQuestions ? `问题 ${questionIndex + 1} / 4` : '未完成任务处理'}</p>
+          <h2>晚间复盘</h2>
+        </div>
+        <div className="review-progress" aria-label="复盘进度">
+          {reviewQuestions.map((question, index) => (
+            <span
+              key={question.key}
+              data-active={isReviewingQuestions && index <= questionIndex}
+            />
+          ))}
+        </div>
+      </div>
+
+      {!isReviewingQuestions && unfinished.length > 0 ? (
+        <>
+          <div className="review-panel__tasks">
           {unfinished.map((task) => {
             const decision = decisions[task.id] ?? defaultDecision;
 
@@ -106,42 +141,61 @@ export function ReviewPanel({ tasks, onSubmit }: ReviewPanelProps) {
               </fieldset>
             );
           })}
-        </div>
-      ) : (
-        <p className="empty-state">今天没有未完成任务。</p>
-      )}
+          </div>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => setIsReviewingQuestions(true)}
+          >
+            下一步：复盘问题
+          </button>
+        </>
+      ) : null}
 
-      <label className="field">
-        今天完成了什么
-        <textarea
-          value={review.completedText}
-          onChange={(event) => setReview({ ...review, completedText: event.target.value })}
-        />
-      </label>
-      <label className="field">
-        未完成的原因是什么
-        <textarea
-          value={review.unfinishedText}
-          onChange={(event) => setReview({ ...review, unfinishedText: event.target.value })}
-        />
-      </label>
-      <label className="field">
-        今天状态或感受如何
-        <textarea
-          value={review.feelingText}
-          onChange={(event) => setReview({ ...review, feelingText: event.target.value })}
-        />
-      </label>
-      <label className="field">
-        明天的重点是什么
-        <textarea
-          value={review.tomorrowFocusText}
-          onChange={(event) => setReview({ ...review, tomorrowFocusText: event.target.value })}
-        />
-      </label>
-      <button type="submit" className="primary-button">
-        完成复盘
-      </button>
+      {isReviewingQuestions ? (
+        <>
+          <label className="field review-question">
+            <span>{currentQuestion.label}</span>
+            <textarea
+              value={review[currentQuestion.key]}
+              placeholder={currentQuestion.placeholder}
+              onChange={(event) =>
+                setReview({ ...review, [currentQuestion.key]: event.target.value })
+              }
+              autoFocus
+            />
+          </label>
+          <div className="review-question__actions">
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={questionIndex === 0 && unfinished.length === 0}
+              onClick={() => {
+                if (questionIndex === 0) {
+                  setIsReviewingQuestions(false);
+                } else {
+                  setQuestionIndex((current) => current - 1);
+                }
+              }}
+            >
+              {questionIndex === 0 ? '返回任务处理' : '上一个问题'}
+            </button>
+            {questionIndex < reviewQuestions.length - 1 ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => setQuestionIndex((current) => current + 1)}
+              >
+                下一个问题
+              </button>
+            ) : (
+              <button type="submit" className="primary-button">
+                完成复盘
+              </button>
+            )}
+          </div>
+        </>
+      ) : null}
     </form>
   );
 }

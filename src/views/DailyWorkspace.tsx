@@ -1,18 +1,13 @@
 import { useEffect, useState } from 'react';
-import { CarryoverInbox } from '../components/CarryoverInbox';
 import { StageTabs } from '../components/StageTabs';
-import { TaskQuickAdd } from '../components/TaskQuickAdd';
 import { ViewSwitch } from '../components/ViewSwitch';
 import type { WorkspaceMode } from '../data/workspaceMode';
 import type { HomeView, Stage } from '../domain/types';
-import { SettingsPanel } from '../settings/SettingsPanel';
 import { useAppStore } from '../store/appStore';
-import { FolderView } from './FolderView';
-import { GalaxyView } from './GalaxyView';
+import { ExecutionWorkspace } from './ExecutionWorkspace';
 import { MonthlyOverview } from './MonthlyOverview';
-import { ReviewPanel } from './ReviewPanel';
-import { SearchPanel } from './SearchPanel';
-import { TaskTemplatePanel } from './TaskTemplatePanel';
+import { PlanningWorkspace } from './PlanningWorkspace';
+import { ReviewWorkspace } from './ReviewWorkspace';
 
 type DailyWorkspaceProps = {
   workspaceMode: WorkspaceMode;
@@ -94,66 +89,50 @@ export function DailyWorkspace({ workspaceMode, onChangeWorkspaceMode }: DailyWo
 
       <section className="workspace-toolbar" aria-label="工作台控制">
         <StageTabs currentStage={stage} onChange={setStage} />
-        <ViewSwitch currentView={currentView} onChange={(view: HomeView) => void setHomeView(view)} />
+        {stage !== 'plan' ? (
+          <ViewSwitch currentView={currentView} onChange={(view: HomeView) => void setHomeView(view)} />
+        ) : null}
       </section>
 
-      <div className="workspace-grid">
-        <div className="workspace-main">
-          {currentView === 'galaxy' ? (
-            <GalaxyView
-              tasks={tasks}
-              onStartTask={(taskId) => void startTask(taskId, 'pause')}
-              onCompleteTask={(taskId) => void completeTask(taskId)}
-            />
-          ) : (
-            <FolderView
-              tasks={tasks}
-              onStartTask={(taskId) => void startTask(taskId, 'pause')}
-              onCompleteTask={(taskId) => void completeTask(taskId)}
-            />
-          )}
-          {stage === 'review' ? <ReviewPanel tasks={tasks} onSubmit={() => undefined} /> : null}
-          {monthlyOverview ? (
-            <MonthlyOverview
-              year={monthlyOverview.year}
-              month={monthlyOverview.month}
-              recordedDates={monthlyOverview.recordedDates}
-              insights={monthlyOverview.insights}
-              tasks={monthlyOverview.tasks}
-            />
-          ) : null}
-        </div>
-        <aside className="workspace-side" aria-label="任务创建">
-          <CarryoverInbox
-            candidates={carryoverCandidates}
-            onConfirm={confirmCarryover}
-            onHide={hideCarryoverCandidate}
-          />
-          <section className="workspace-panel" aria-label="快速添加任务">
-            <TaskQuickAdd onAdd={addTask} />
-          </section>
-          <TaskTemplatePanel
-            tasks={tasks}
-            templates={taskTemplates}
-            onSaveTemplate={saveTaskTemplate}
-            onApplyTemplate={applyTaskTemplate}
-          />
-          <SearchPanel onSearch={searchTasks} />
-          <section className="workspace-panel" aria-label="设置">
-            <SettingsPanel
-              settings={currentSettings}
-              onSave={(nextSettings) => void saveSettings(nextSettings)}
-              dataSafety={{
-                onExportJson: exportJsonBackup,
-                onExportMarkdown: exportMarkdownArchive,
-                onImportJson: importJsonBackup,
-                onResetDemo: resetDemoData,
-                canResetDemo: workspaceMode === 'demo',
-              }}
-            />
-          </section>
-        </aside>
-      </div>
+      {stage === 'plan' ? (
+        <PlanningWorkspace
+          tasks={tasks}
+          carryoverCandidates={carryoverCandidates}
+          templates={taskTemplates}
+          onAddTask={addTask}
+          onConfirmCarryover={confirmCarryover}
+          onHideCarryover={hideCarryoverCandidate}
+          onSaveTemplate={saveTaskTemplate}
+          onApplyTemplate={applyTaskTemplate}
+        />
+      ) : stage === 'execute' ? (
+        <ExecutionWorkspace
+          currentView={currentView}
+          tasks={tasks}
+          settings={currentSettings}
+          canResetDemo={workspaceMode === 'demo'}
+          onAddTask={addTask}
+          onStartTask={(taskId) => void startTask(taskId, 'pause')}
+          onCompleteTask={(taskId) => void completeTask(taskId)}
+          onSearch={searchTasks}
+          onSaveSettings={(nextSettings) => void saveSettings(nextSettings)}
+          onExportJson={exportJsonBackup}
+          onExportMarkdown={exportMarkdownArchive}
+          onImportJson={importJsonBackup}
+          onResetDemo={resetDemoData}
+        />
+      ) : (
+        <ReviewWorkspace currentView={currentView} tasks={tasks} onSubmit={() => undefined} />
+      )}
+      {monthlyOverview ? (
+        <MonthlyOverview
+          year={monthlyOverview.year}
+          month={monthlyOverview.month}
+          recordedDates={monthlyOverview.recordedDates}
+          insights={monthlyOverview.insights}
+          tasks={monthlyOverview.tasks}
+        />
+      ) : null}
     </main>
   );
 }

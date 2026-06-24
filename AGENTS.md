@@ -16,7 +16,7 @@
 
 当前版本：`0.2.0`，MVP 便携体验版。
 
-当前进度：Phase 3 数据安全主要能力已接入，Phase 4 复盘洞察和月度体验已完成自动验证与便携包 smoke，Phase 5 日常工作流增强已完成代码实现和自动验证，Phase 6 开源发布准备已补充仓库文档、Issue 模板、CI 和 Release 草案。下一阶段优先完成人工 GitHub Release，然后再评估 Phase 7。
+当前进度：Phase 3 数据安全主要能力已接入，Phase 4 复盘洞察和月度体验已完成自动验证与便携包 smoke，Phase 5 日常工作流增强已完成代码实现和自动验证，Phase 6 开源发布准备已补充仓库文档、Issue 模板、CI 和 Release 草案；正式发布前的今日工作台 UI 重构已实现。下一阶段优先完成人工 GitHub Release，然后再评估 Phase 7。
 
 当前重点：个人长期稳定使用、数据可备份、可发给别人体验，并让外部用户能够理解、运行和反馈。不要提前做账号、云同步或团队协作。
 
@@ -30,13 +30,14 @@
 4. `docs/PROJECT_PHASE_4_INSIGHTS.md`：四阶段复盘洞察和月度体验方案与验收记录。
 5. `docs/PROJECT_PHASE_5_WORKFLOW.md`：五阶段日常工作流增强方案。
 6. `docs/PROJECT_PHASE_6_OPEN_SOURCE.md`：六阶段开源发布和协作准备方案。
-7. `docs/RELEASE_DRAFT_v0.2.0.md`：GitHub Release 草案。
-8. `CONTRIBUTING.md`：外部反馈、贡献、测试和隐私边界说明。
-9. `CHANGELOG.md`：版本变化记录。
-10. `docs/PROJECT_FUTURE_ROADMAP.md`：后续阶段总方案、能力边界、测试边界。
-11. `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md`：后续详细实施计划。
-12. `docs/superpowers/specs/2026-06-16-daily-plan-review-design.md`：初始产品设计。
-13. `docs/superpowers/plans/2026-06-21-portable-preview-implementation.md`：二阶段便携版实施历史。
+7. `docs/PROJECT_UI_REFRESH.md`：正式发布前的今日工作台界面重构。
+8. `docs/RELEASE_DRAFT_v0.2.0.md`：GitHub Release 草案。
+9. `CONTRIBUTING.md`：外部反馈、贡献、测试和隐私边界说明。
+10. `CHANGELOG.md`：版本变化记录。
+11. `docs/PROJECT_FUTURE_ROADMAP.md`：后续阶段总方案、能力边界、测试边界。
+12. `docs/superpowers/plans/2026-06-22-future-roadmap-implementation.md`：后续详细实施计划。
+13. `docs/superpowers/specs/2026-06-16-daily-plan-review-design.md`：初始产品设计。
+14. `docs/superpowers/plans/2026-06-21-portable-preview-implementation.md`：二阶段便携版实施历史。
 
 如果这些文档和代码出现冲突，以当前代码和最新用户需求为准，但要同步修正文档。
 
@@ -44,7 +45,7 @@
 
 已实现：
 
-- 今日工作台。
+- 分阶段今日工作台：计划全宽录入、执行全屏视图、复盘背景与抽屉。
 - 文件夹视图和星系视图。
 - 主页视图切换并记住选择。
 - 四象限任务管理。
@@ -59,6 +60,7 @@
 - 简单重复任务：支持每天、工作日、每周同一天，打开某一天时生成，不在后台运行。
 - 本地搜索和筛选：按关键词、日期范围、四象限、状态和顺延原因筛选本地历史任务。
 - 开源发布准备：MIT License、CONTRIBUTING、CHANGELOG、Issue Forms、GitHub Actions CI、Release 草案。
+- 星系四象限色雾、象限同色星球、曲线路径巡航和减少动态效果支持。
 - 便携 zip 打包。
 
 暂不实现：
@@ -87,7 +89,7 @@
 - `src/data/`：数据接口、内存仓库、Tauri SQLite 仓库、便携数据库路径、示例数据、JSON 导入导出、Markdown 可读导出。
 - `src/data/taskTemplates.ts`：本地任务模板保存和应用的纯数据规则。
 - `src/store/`：应用状态和任务执行动作。
-- `src/views/`：主要页面和视图，例如今日工作台、星系视图、文件夹视图、月度总览、月度星系地图、月度文件柜、复盘面板。
+- `src/views/`：主要页面和视图，例如今日工作台、计划工作区、执行工作区、复盘工作区、星系视图、文件夹视图和月度总览。
 - `src/components/`：局部可复用组件。
 - `src/settings/`：设置面板和数据安全面板。
 - `src/notifications/`：本地通知相关能力。

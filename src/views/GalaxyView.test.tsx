@@ -19,6 +19,14 @@ describe('GalaxyView', () => {
     expect(screen.getAllByLabelText('飞行轨迹')).toHaveLength(2);
     expect(screen.getByLabelText('当前飞船')).toBeTruthy();
     expect(screen.getByLabelText('完成旗帜')).toBeTruthy();
+    expect(screen.getByLabelText('重要且紧急象限')).toBeTruthy();
+    expect(screen.getByLabelText('重要不紧急象限')).toBeTruthy();
+    expect(screen.getByLabelText('不重要但紧急象限')).toBeTruthy();
+    expect(screen.getByLabelText('不重要不紧急象限')).toBeTruthy();
+    expect(
+      screen.getByText('Task completed-1').closest('[data-quadrant]')?.getAttribute('data-quadrant'),
+    ).toBe('important_urgent');
+    expect(screen.getByLabelText('当前飞船').getAttribute('data-route-path')).toBeTruthy();
   });
 
   it('keeps the star map visible for an empty day', () => {

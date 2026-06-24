@@ -15,7 +15,7 @@ describe('DailyWorkspace task templates', () => {
     vi.restoreAllMocks();
   });
 
-  it('saves selected tasks as a template and applies the template from the side panel', async () => {
+  it('saves selected tasks as a template and applies the template from the planning panel', async () => {
     vi.spyOn(crypto, 'randomUUID')
       .mockReturnValueOnce('00000000-0000-4000-8000-000000000001')
       .mockReturnValueOnce(generatedTaskId);
@@ -25,6 +25,7 @@ describe('DailyWorkspace task templates', () => {
 
     renderWorkspace(repository);
 
+    await userEvent.click(await screen.findByRole('button', { name: '任务模板' }));
     expect(await screen.findByRole('heading', { name: '任务模板' })).toBeTruthy();
     await userEvent.type(screen.getByLabelText('模板名称'), 'Morning routine');
     await userEvent.click(screen.getByRole('checkbox', { name: /Write plan/ }));

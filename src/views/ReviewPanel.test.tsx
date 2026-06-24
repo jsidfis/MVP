@@ -11,9 +11,19 @@ describe('ReviewPanel', () => {
 
     await userEvent.selectOptions(screen.getByLabelText('task-1 的处理方式'), 'postpone');
     await userEvent.selectOptions(screen.getByLabelText('task-1 的原因'), 'low_energy');
+    await userEvent.click(screen.getByRole('button', { name: '下一步：复盘问题' }));
+    expect(screen.getByText('问题 1 / 4')).toBeTruthy();
     await userEvent.type(screen.getByLabelText('今天完成了什么'), '完成方案');
+    await userEvent.click(screen.getByRole('button', { name: '下一个问题' }));
     await userEvent.type(screen.getByLabelText('未完成的原因是什么'), '精力不足');
+    await userEvent.click(screen.getByRole('button', { name: '下一个问题' }));
     await userEvent.type(screen.getByLabelText('今天状态或感受如何'), '状态一般');
+    await userEvent.click(screen.getByRole('button', { name: '上一个问题' }));
+    expect((screen.getByLabelText('未完成的原因是什么') as HTMLTextAreaElement).value).toBe(
+      '精力不足',
+    );
+    await userEvent.click(screen.getByRole('button', { name: '下一个问题' }));
+    await userEvent.click(screen.getByRole('button', { name: '下一个问题' }));
     await userEvent.type(screen.getByLabelText('明天的重点是什么'), '继续实现');
     await userEvent.click(screen.getByRole('button', { name: '完成复盘' }));
 

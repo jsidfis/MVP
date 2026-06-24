@@ -10,14 +10,27 @@ import { DailyWorkspace } from './DailyWorkspace';
 const today = '2026-06-18';
 
 describe('DailyWorkspace', () => {
+  it('shows a focused planning workspace without the folder or galaxy view', async () => {
+    const repository = new MemoryDailyRepository();
+    renderWorkspace(repository);
+
+    await waitForLoaded();
+    expect(screen.getByRole('heading', { name: '制定今日计划' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: '文件夹视图' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: '今日星图' })).toBeNull();
+  });
+
   it('adds a task with title and quadrant through the store', async () => {
     const repository = new MemoryDailyRepository();
     renderWorkspace(repository);
 
     await waitForLoaded();
     await userEvent.type(screen.getByLabelText('任务标题'), '整理项目计划');
-    await userEvent.selectOptions(screen.getByLabelText('四象限'), 'important_not_urgent');
-    await userEvent.click(screen.getByRole('button', { name: '添加任务' }));
+    await userEvent.click(screen.getByRole('button', { name: '下一步：选择四象限' }));
+    await userEvent.click(screen.getByRole('button', { name: '重要不紧急 安排推进' }));
+    await userEvent.click(screen.getByRole('button', { name: '下一步：重复规则' }));
+    await userEvent.click(screen.getByRole('button', { name: '下一步：确认' }));
+    await userEvent.click(screen.getByRole('button', { name: '确认添加任务' }));
 
     expect(await screen.findByText('整理项目计划')).toBeTruthy();
     const [saved] = await repository.listTasks(today);
@@ -34,6 +47,7 @@ describe('DailyWorkspace', () => {
     renderWorkspace(repository);
 
     await waitForLoaded();
+    await userEvent.click(screen.getByRole('button', { name: '执行中' }));
     expect(screen.getByRole('heading', { name: '文件夹视图' })).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: '星系视图' }));
@@ -96,11 +110,12 @@ describe('DailyWorkspace', () => {
     expect(onChangeWorkspaceMode).toHaveBeenCalledWith('demo');
   });
 
-  it('shows data safety controls in the workspace side panel', async () => {
+  it('shows data safety controls outside the planning flow', async () => {
     const repository = new MemoryDailyRepository();
     renderWorkspace(repository);
 
     await waitForLoaded();
+    await userEvent.click(screen.getByRole('button', { name: '执行中' }));
 
     expect(screen.getByText('data/user.sqlite')).toBeTruthy();
     expect(screen.getByText('data/demo.sqlite')).toBeTruthy();
