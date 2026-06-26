@@ -155,7 +155,7 @@ npm run portable:build:gnu
 dist-portable/每日计划与复盘-v0.2.0-portable.zip
 ```
 
-体验者解压后双击 `每日计划与复盘.exe`。便携版数据保存在解压文件夹内：
+体验者解压后双击 `每日计划与复盘.exe`。发布版只显示应用窗口，不需要保留命令行窗口。便携版数据保存在解压文件夹内：
 
 - `data/user.sqlite`：我的数据
 - `data/demo.sqlite`：示例数据

@@ -26,7 +26,14 @@ describe('GalaxyView', () => {
     expect(
       screen.getByText('Task completed-1').closest('[data-quadrant]')?.getAttribute('data-quadrant'),
     ).toBe('important_urgent');
-    expect(screen.getByLabelText('当前飞船').getAttribute('data-route-path')).toBeTruthy();
+    const activeShip = screen.getByLabelText('当前飞船');
+    expect(activeShip.getAttribute('data-route-path')).toBeTruthy();
+    expect(
+      screen.getAllByLabelText('飞行轨迹')[0].closest('svg')?.getAttribute('preserveAspectRatio'),
+    ).toBe('none');
+    expect(activeShip.querySelector('[data-testid="ufo-cabin"]')).toBeTruthy();
+    expect(activeShip.querySelector('[data-testid="ufo-body"]')).toBeTruthy();
+    expect(activeShip.querySelector('[data-testid="ufo-thruster"]')).toBeTruthy();
   });
 
   it('keeps the star map visible for an empty day', () => {

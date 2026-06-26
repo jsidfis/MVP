@@ -55,7 +55,7 @@ export function buildGalaxyLayout(tasks: Task[]): GalaxyLayout {
 
   const routes = tasks
     .filter((task) => task.status === 'completed' || task.status === 'active_primary')
-    .map((task, routeIndex) => {
+    .map((task) => {
       const planet = planetById.get(task.id);
       if (!planet) {
         throw new Error(`Missing planet for task ${task.id}`);
@@ -69,7 +69,7 @@ export function buildGalaxyLayout(tasks: Task[]): GalaxyLayout {
         task,
         from,
         to,
-        path: buildRoutePath(from, to, routeIndex),
+        path: buildGalaxyRoutePath(from, to, task.id),
         completed: task.status === 'completed',
       };
     });
@@ -90,20 +90,29 @@ function positionForTask(task: Task, ordinal: number): GalaxyPoint {
   };
 }
 
-function buildRoutePath(from: GalaxyPoint, to: GalaxyPoint, routeIndex: number): string {
+export function buildGalaxyRoutePath(
+  from: GalaxyPoint,
+  to: GalaxyPoint,
+  routeKey: string,
+): string {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const distance = Math.hypot(dx, dy) || 1;
-  const bend = (routeIndex % 2 === 0 ? 1 : -1) * Math.min(12, distance * 0.28);
-  const perpendicularX = (-dy / distance) * bend;
-  const perpendicularY = (dx / distance) * bend;
+  const seed = hashString(`${routeKey}:${round(from.x)},${round(from.y)}:${round(to.x)},${round(to.y)}`);
+  const direction = seededFraction(seed, 1) < 0.5 ? -1 : 1;
+  const bend = Math.min(18, Math.max(4, distance * (0.18 + seededFraction(seed, 2) * 0.18)));
+  const firstProgress = 0.2 + seededFraction(seed, 3) * 0.22;
+  const secondProgress = 0.58 + seededFraction(seed, 4) * 0.22;
+  const firstOffset = direction * bend * (0.7 + seededFraction(seed, 5) * 0.55);
+  const secondDirection = seededFraction(seed, 6) < 0.32 ? -direction : direction;
+  const secondOffset = secondDirection * bend * (0.45 + seededFraction(seed, 7) * 0.75);
   const firstControl = {
-    x: from.x + dx * 0.35 + perpendicularX,
-    y: from.y + dy * 0.35 + perpendicularY,
+    x: clamp(from.x + dx * firstProgress + (-dy / distance) * firstOffset),
+    y: clamp(from.y + dy * firstProgress + (dx / distance) * firstOffset),
   };
   const secondControl = {
-    x: from.x + dx * 0.65 + perpendicularX,
-    y: from.y + dy * 0.65 + perpendicularY,
+    x: clamp(from.x + dx * secondProgress + (-dy / distance) * secondOffset),
+    y: clamp(from.y + dy * secondProgress + (dx / distance) * secondOffset),
   };
 
   return [
@@ -112,6 +121,31 @@ function buildRoutePath(from: GalaxyPoint, to: GalaxyPoint, routeIndex: number):
     `${round(secondControl.x)} ${round(secondControl.y)}`,
     `${round(to.x)} ${round(to.y)}`,
   ].join(' ');
+}
+
+function hashString(value: string): number {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+function seededFraction(seed: number, salt: number): number {
+  let value = seed ^ Math.imul(salt, 0x9e3779b1);
+  value ^= value >>> 16;
+  value = Math.imul(value, 0x7feb352d);
+  value ^= value >>> 15;
+  value = Math.imul(value, 0x846ca68b);
+  value ^= value >>> 16;
+  return (value >>> 0) / 4294967295;
+}
+
+function clamp(value: number): number {
+  return Math.min(98, Math.max(2, value));
 }
 
 function round(value: number): number {

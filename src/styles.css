@@ -666,8 +666,33 @@ body {
 }
 
 .galaxy-ship-motion {
-  fill: #ffdd75;
-  filter: drop-shadow(0 0 2px rgba(255, 221, 117, 0.88));
+  filter: drop-shadow(0 0 2px rgba(111, 224, 235, 0.82));
+}
+
+.galaxy-ufo__body {
+  fill: #c9d6dc;
+  stroke: #f7fbff;
+  stroke-width: 0.45;
+}
+
+.galaxy-ufo__cabin {
+  fill: #6bd2df;
+  stroke: #dffbff;
+  stroke-width: 0.4;
+}
+
+.galaxy-ufo__wing {
+  fill: #8195a1;
+  stroke: #dce7eb;
+  stroke-width: 0.35;
+}
+
+.galaxy-ufo__thruster {
+  fill: rgba(255, 211, 102, 0.9);
+}
+
+.galaxy-ufo__light {
+  fill: #ffdf79;
 }
 
 .galaxy-ship--static-fallback {
@@ -1366,13 +1391,11 @@ button:focus-visible {
 .galaxy-ship {
   position: absolute;
   z-index: 5;
-  width: 0;
-  height: 0;
-  border-right: 9px solid transparent;
-  border-bottom: 18px solid #ffdd75;
-  border-left: 9px solid transparent;
-  filter: drop-shadow(0 0 8px rgba(255, 221, 117, 0.78));
-  transform: translate(12px, -30px) rotate(34deg);
+  width: 34px;
+  height: 28px;
+  overflow: visible;
+  filter: drop-shadow(0 0 8px rgba(111, 224, 235, 0.72));
+  transform: translate(-50%, -140%) rotate(12deg);
 }
 
 .galaxy-map .empty-state {

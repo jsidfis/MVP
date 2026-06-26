@@ -37,7 +37,7 @@ export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewPro
         <div className="galaxy-axis galaxy-axis--vertical" aria-hidden="true" />
         <div className="galaxy-axis galaxy-axis--horizontal" aria-hidden="true" />
         <span className="galaxy-center" aria-hidden="true" />
-        <svg className="galaxy-routes" viewBox="0 0 100 100">
+        <svg className="galaxy-routes" viewBox="0 0 100 100" preserveAspectRatio="none">
           {layout.routes.map((route) => (
             <path
               key={route.task.id}
@@ -53,7 +53,7 @@ export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewPro
               aria-label="当前飞船"
               data-route-path={activeRoute.path}
             >
-              <polygon points="-1.8,2.2 0,-2.8 1.8,2.2 0,1.2" />
+              <UfoGlyph />
               <animateMotion
                 dur="5s"
                 repeatCount="indefinite"
@@ -74,11 +74,15 @@ export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewPro
           />
         ))}
         {activePlanet ? (
-          <span
+          <svg
             className={activeRoute ? 'galaxy-ship galaxy-ship--static-fallback' : 'galaxy-ship'}
             aria-label={activeRoute ? undefined : '当前飞船'}
+            aria-hidden={activeRoute ? true : undefined}
             style={{ left: `${activePlanet.position.x}%`, top: `${activePlanet.position.y}%` }}
-          />
+            viewBox="-6 -5 12 10"
+          >
+            <UfoGlyph />
+          </svg>
         ) : null}
         <div className="galaxy-legend" aria-label="四象限图例">
           <span data-quadrant="important_urgent">重要且紧急</span>
@@ -89,6 +93,36 @@ export function GalaxyView({ tasks, onStartTask, onCompleteTask }: GalaxyViewPro
         {tasks.length === 0 ? <p className="empty-state">暂无任务</p> : null}
       </div>
     </section>
+  );
+}
+
+function UfoGlyph() {
+  return (
+    <g className="galaxy-ufo" aria-hidden="true">
+      <path
+        className="galaxy-ufo__thruster"
+        data-testid="ufo-thruster"
+        d="M -1.8 2.1 L 0 4.8 L 1.8 2.1 Z"
+      />
+      <path className="galaxy-ufo__wing" d="M -5.2 0.4 L -2.6 -1 L -2.2 1.5 Z" />
+      <path className="galaxy-ufo__wing" d="M 5.2 0.4 L 2.6 -1 L 2.2 1.5 Z" />
+      <ellipse
+        className="galaxy-ufo__body"
+        data-testid="ufo-body"
+        cx="0"
+        cy="0.7"
+        rx="3.4"
+        ry="1.8"
+      />
+      <path
+        className="galaxy-ufo__cabin"
+        data-testid="ufo-cabin"
+        d="M -1.8 -0.3 Q -1.25 -3.1 0 -3.35 Q 1.25 -3.1 1.8 -0.3 Z"
+      />
+      <circle className="galaxy-ufo__light" cx="-1.6" cy="1.05" r="0.34" />
+      <circle className="galaxy-ufo__light" cx="0" cy="1.35" r="0.34" />
+      <circle className="galaxy-ufo__light" cx="1.6" cy="1.05" r="0.34" />
+    </g>
   );
 }
 

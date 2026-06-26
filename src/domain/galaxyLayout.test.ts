@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildGalaxyLayout } from './galaxyLayout';
+import { buildGalaxyLayout, buildGalaxyRoutePath } from './galaxyLayout';
 import type { Task } from './types';
 
 describe('buildGalaxyLayout', () => {
@@ -51,6 +51,33 @@ describe('buildGalaxyLayout', () => {
     const positions = layout.planets.map((planet) => `${planet.position.x},${planet.position.y}`);
 
     expect(new Set(positions).size).toBe(positions.length);
+  });
+
+  it('keeps a task route stable for the same identity and endpoints', () => {
+    const from = { x: 18, y: 64 };
+    const to = { x: 82, y: 24 };
+
+    expect(buildGalaxyRoutePath(from, to, 'stable-task')).toBe(
+      buildGalaxyRoutePath(from, to, 'stable-task'),
+    );
+  });
+
+  it('varies route controls for different task identities with the same endpoints', () => {
+    const from = { x: 18, y: 64 };
+    const to = { x: 82, y: 24 };
+
+    expect(buildGalaxyRoutePath(from, to, 'task-alpha')).not.toBe(
+      buildGalaxyRoutePath(from, to, 'task-beta'),
+    );
+  });
+
+  it('keeps the route path endpoints equal to the route coordinates', () => {
+    const from = { x: 18.4, y: 64.2 };
+    const to = { x: 82.3, y: 24.7 };
+    const path = buildGalaxyRoutePath(from, to, 'endpoint-task');
+
+    expect(path).toMatch(/^M 18\.4 64\.2 C /);
+    expect(path).toMatch(/ 82\.3 24\.7$/);
   });
 });
 
